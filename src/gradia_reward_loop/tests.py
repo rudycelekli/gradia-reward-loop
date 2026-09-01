@@ -127,6 +127,32 @@ def main() -> int:
     check("DPO gameable exploit rate exceeds verifiable (implicit reward is gameable)",
           dgam.exploit_rate > dver.exploit_rate + 0.2)
 
+    # --- learned reward model: spurious feature -> hackable (dose-response) ---
+    from .reward_model import LearnedRewardModel, fit_reward_model, spurious_sweep
+    rm_weak = LearnedRewardModel(fit_reward_model(spurious=0.5, seed=0))
+    rm_strong = LearnedRewardModel(fit_reward_model(spurious=0.95, seed=0))
+    check("learned RM ignores the phrase with no training correlation", abs(rm_weak.phrase_weight()) < 0.5)
+    check("learned RM weights the phrase under a strong spurious correlation", rm_strong.phrase_weight() > 2.0)
+    sw = spurious_sweep(levels=(0.5, 0.95), iters=150, seed=0)
+    check("stronger spurious correlation -> more hacking (dose-response)",
+          sw[-1]["exploit_prob"] > sw[0]["exploit_prob"] + 0.3)
+    check("witnessed fork localizes the learned spurious feature", sw[-1]["localized"])
+
+    # --- over-optimization: pressure trades true reward for exploitation ---
+    from .overopt import frontier, summary
+    ovr = summary(frontier(seeds=range(60)))
+    check("optimization pressure raises exploitation toward certainty", ovr["hack_prob_high"] > 0.9)
+    check("optimization pressure costs true reward", ovr["true_lost_to_hacking"] > 0.1)
+
+    # --- online hacking detector (training-time immune system) ---
+    from .detector import monitor_training
+    det_g, res_g = monitor_training(GameableReward(), ProxyTask(p_solve=0.5, seed=1), iters=200, seed=1)
+    det_v, _ = monitor_training(VerifiableReward(), ProxyTask(p_solve=0.5, seed=1), iters=200, seed=1)
+    check("detector fires on the gameable reward", det_g.fired_at is not None)
+    check("detector does not false-positive on the verifiable control", det_v.fired_at is None)
+    gap_at = next(g for i, g, e in det_g.trace if i == det_g.fired_at)
+    check("detector catches the hack before it saturates", gap_at < res_g.report.final_gap - 0.1)
+
     npass = sum(_checks); n = len(_checks)
     print(f"\n{npass} passed, {n - npass} failed")
     return 0 if npass == n else 1

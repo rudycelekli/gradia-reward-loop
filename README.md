@@ -46,7 +46,10 @@ make train                        # GRPO on a small model (needs a GPU)
 | `localize.py` | witnessed single-variable localization of the reward exploit |
 | `grpo.py` | GRPO group-advantage core (unit-tested) + real-LLM trainer skeleton |
 | `evidence.py` | hash-chained, tamper-evident run bundles (Wind-Tunnel-compatible schema) |
-| `demo.py` · `cli.py` · `tests.py` | orchestration, CLI, and the property/control suite |
+| `overopt.py` | optimization-pressure vs reward-hacking frontier (with bootstrap CIs, `stats.py`) |
+| `reward_model.py` | a *learned* logistic reward model hacked through a spurious feature (dose-response) |
+| `detector.py` | online hacking detector -- spot-audits the loop, flags hacking early (immune system) |
+| `demo.py` · `cli.py` · `tests.py` | orchestration, CLI, and the 36-check property/control suite |
 
 See **[NOTE.md](NOTE.md)** for the write-up (abstract, results, figures) and **[PROGRAM.md](PROGRAM.md)** for the thesis, the four hypotheses, the mathematics this
 program demonstrates (PPO/GAE, GRPO, DPO, reward over-optimization), and the M0–M5 milestone plan.

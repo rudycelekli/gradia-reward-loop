@@ -146,8 +146,72 @@ def fig_objectives(seed=1):
     return _save(fig, "fig5_objectives.png")
 
 
+def fig_overopt(seed=0):
+    """Optimization pressure vs true reward and P(exploit): the reward-hacking tradeoff, with CIs."""
+    from .overopt import frontier
+    f = frontier()
+    kl = f["kl"]
+    fig, ax = plt.subplots(figsize=(6.6, 3.9))
+    ax.plot(kl, f["true"], color=INK, lw=2, label="true (oracle) reward")
+    ax.fill_between(kl, f["lo"], f["hi"], color=INK, alpha=0.15)
+    ax.set_xlabel("KL(policy || initial)  =  optimization pressure  (increasing right)")
+    ax.set_ylabel("true (oracle) reward", color=INK); ax.set_ylim(0, 0.8)
+    ax2 = ax.twinx()
+    ax2.plot(kl, f["hack_prob"], color=RED, lw=2, ls="--", label="P(policy exploits the reward seam)")
+    ax2.set_ylabel("P(exploit the seam)", color=RED); ax2.set_ylim(0, 1.05)
+    ax2.spines["top"].set_visible(False)
+    ax.set_title("Optimization pressure drives reward hacking")
+    h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, frameon=False, loc="center left", fontsize=8)
+    return _save(fig, "fig6_overoptimization.png")
+
+
+def fig_learned_rm(seed=0):
+    """Dose-response: a logistic RM's learned weight on the phrase, and the resulting hack rate,
+    both rise with the spurious correlation in its training data."""
+    from .reward_model import spurious_sweep
+    rows = spurious_sweep(seed=seed)
+    s = [r["spurious"] for r in rows]
+    wt = [r["phrase_weight"] for r in rows]
+    ep = [r["exploit_prob"] for r in rows]
+    fig, ax = plt.subplots(figsize=(6.4, 3.9))
+    ax.plot(s, wt, "o-", color=AMBER, lw=2, label="learned weight on the phrase feature")
+    ax.set_xlabel("spurious phrase/correctness correlation in the RM's training data")
+    ax.set_ylabel("learned phrase weight", color=AMBER)
+    ax2 = ax.twinx()
+    ax2.plot(s, ep, "s--", color=RED, lw=2, label="P(policy exploits the learned RM)")
+    ax2.set_ylabel("P(exploit)", color=RED); ax2.set_ylim(0, 1.05)
+    ax2.spines["top"].set_visible(False)
+    ax.set_title("A learned reward model inherits — and is hacked through — a spurious feature")
+    h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, frameon=False, loc="upper left", fontsize=8)
+    return _save(fig, "fig7_learned_rm.png")
+
+
+def fig_detector(seed=1):
+    """Online detector: audited witnessed-exploit rate over training, with the detection point;
+    fires early on the gameable reward, never on the verifiable control."""
+    from .detector import monitor_training
+    fig, ax = plt.subplots(figsize=(6.6, 3.8))
+    for ch, color in [(VerifiableReward(), BLUE), (GameableReward(), RED)]:
+        det, _ = monitor_training(ch, ProxyTask(p_solve=0.5, seed=seed), iters=120, seed=seed)
+        its = [i for i, _, _ in det.trace]
+        er = [e for _, _, e in det.trace]
+        ax.plot(its, er, color=color, lw=2, label=f"{ch.name}: audited exploit rate")
+        if det.fired_at is not None:
+            ax.axvline(det.fired_at, color=color, ls=":", lw=1.5)
+            ax.annotate("detected", xy=(det.fired_at, 0.55),
+                        xytext=(det.fired_at + 4, 0.55), color=color, fontsize=9, va="center")
+    ax.axhline(0.45, color=MUTED, ls="--", lw=1, label="alarm threshold")
+    ax.set_xlabel("RL iteration"); ax.set_ylabel("audited witnessed-exploit rate")
+    ax.set_ylim(-0.03, 1.05)
+    ax.set_title("Online detector flags reward hacking early (no false positive on control)")
+    ax.legend(frameon=False, fontsize=8, loc="center right")
+    return _save(fig, "fig8_detector.png")
+
+
 def build_all():
-    outs = [fig_ppo(), fig_goodhart(), fig_localization(), fig_repair(), fig_objectives()]
+    outs = [fig_ppo(), fig_goodhart(), fig_localization(), fig_repair(), fig_objectives(), fig_overopt(), fig_learned_rm(), fig_detector()]
     for p in outs:
         print("wrote", p.relative_to(FIG.parent))
     return outs

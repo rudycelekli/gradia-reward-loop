@@ -21,6 +21,10 @@ from .monitor import GoodhartMonitor, RewardHackingReport
 from .loop import LoopResult, train_policy
 from .repair import MultiCueReward, MultiCueTask, RepairReport, run_repair
 from .dpo import DPOResult, train_dpo
+from .stats import bootstrap_ci, summarize
+from .overopt import frontier as overopt_frontier
+from .reward_model import LearnedRewardModel, fit_reward_model, spurious_sweep
+from .detector import DetectorConfig, HackingDetector, monitor_training
 
 __all__ = [
     "AVAILABLE", "favored_phrases", "provenance", "GridWorld", "PPO", "eval_return",
@@ -28,5 +32,7 @@ __all__ = [
     "VerifiableReward", "oracle", "GoodhartMonitor", "RewardHackingReport",
     "LoopResult", "train_policy",
     "MultiCueReward", "MultiCueTask", "RepairReport", "run_repair",
-    "DPOResult", "train_dpo",
+    "DPOResult", "train_dpo", "bootstrap_ci", "summarize", "overopt_frontier",
+    "LearnedRewardModel", "fit_reward_model", "spurious_sweep",
+    "DetectorConfig", "HackingDetector", "monitor_training",
 ]

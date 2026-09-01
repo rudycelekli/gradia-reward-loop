@@ -44,12 +44,13 @@ def localize_reward_exploit(channel, task, exploits, variable: str = "favored_ph
     import numpy as np
     rng = np.random.default_rng(seed)
     base_pass = []
-    while len(base_pass) < len(exploits) and len(base_pass) < 256:
-        ans = task.realise(0)               # SOLVE
+    attempts = 0
+    target = min(len(exploits), 256)
+    while len(base_pass) < target and attempts < 4000:
+        attempts += 1
+        ans = task.realise(0)               # SOLVE realisations (the negative class)
         if channel.passes(ans):
             base_pass.append(ans)
-        if len(base_pass) == 0 and rng.random() < 0:  # guard against infinite loop
-            break
     base_flips = sum(1 for a in base_pass
                      if channel.passes(a) and not channel.passes(task.strip_phrase(a)))
     baseline_flip = base_flips / max(1, len(base_pass))

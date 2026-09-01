@@ -11,7 +11,7 @@ does damage is the reinforcement-learning training loop, where an optimizer quer
 model millions of times *specifically to find its highest-scoring behaviours*. We carry the
 Reward-Hacking Wind Tunnel's instrument — the oracle-witnessed exploit definition
 (`reward-PASS ∧ oracle-WRONG`), witnessed single-variable localization, and hash-chained
-evidence bundles — into that loop. On a minimal, fully reproducible task we show four things.
+evidence bundles — into that loop. On a minimal, fully reproducible task we show the following.
 **(H1, emergence)** Optimizing a policy against a *gameable* reward opens a Goodhart gap — proxy
 reward 0.98 while true (oracle) quality collapses to 0.00 — with the proxy–truth correlation
 going negative (−0.84). **(Control C)** The same optimizer against an oracle-*verifiable* reward
@@ -84,6 +84,32 @@ reward-driven optimization, not of one algorithm.
 
 ![Both objectives hack](figures/fig5_objectives.png)
 
+**3.6 Optimization pressure drives reward hacking (Fig. 6).** The KL-regularized optimal policy is
+Boltzmann in the proxy reward; sweeping the optimization pressure traces true (oracle) reward
+against KL from the initial policy. As pressure rises the policy concentrates on the reward's
+exploitable seam -- P(exploit) climbs from 0.13 to 1.00 -- while true reward falls from 0.61 to
+0.26 (a 0.35 loss), averaged over reward-model draws with bootstrap CIs. This is the
+reward-hacking face of over-optimization (Gao, Schulman & Hilton, 2022).
+
+![Optimization pressure](figures/fig6_overoptimization.png)
+
+**3.7 A *learned* reward model is hacked through a spurious feature (Fig. 7).** Replacing the
+rule-based reward with a logistic reward model trained on data in which the favoured phrase
+spuriously correlates with correctness, the model *learns* to weight the phrase (weight rising with
+the training correlation, 0.0 -> 5.1), the RL policy exploits it (P(exploit) -> 0.98), and the
+witnessed fork recovers the learned feature every time. Severity is a dose-response in the spurious
+correlation -- closing the "it is only a hardcoded rule" objection.
+
+![Learned reward model](figures/fig7_learned_rm.png)
+
+**3.8 An online detector flags hacking early (Fig. 8).** The Wind Tunnel witnesses exploits by
+spot-auditing with an oracle; run that audit each training window and the witnessed-exploit rate
+becomes an early-warning signal. On the gameable reward the detector fires at iteration 12
+(gap 0.60), well before the gap saturates at 0.98; on the verifiable control it never fires. This
+is the detection half of a training-time immune system whose repair half is Section 3.4.
+
+![Online detector](figures/fig8_detector.png)
+
 ## 4. Method and mathematics
 
 The repository implements and/or derives: the policy-gradient theorem and the closed-form softmax
@@ -121,7 +147,7 @@ specified but not yet run. These are the point of the milestone plan, not hidden
 
 ## 8. Reproducibility
 
-`make test` runs 27 property/control checks that gate the science (the exploit definition, the
+`make test` runs 36 property/control checks that gate the science (the exploit definition, the
 control, the localizer, the repair convergence, the evidence chain). `make demo` runs the full
 attack→localize→repair→breadth story and writes a hash-chained, tamper-evident evidence bundle to
 `runs/committed/`; `gradia-reward-loop verify runs/committed` recomputes it. `make figures`

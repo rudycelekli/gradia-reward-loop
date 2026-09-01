@@ -82,6 +82,13 @@ def run(iters: int = 250, seed: int = 1, write: bool = True):
         print(f"    {ann.name:11s} DPO: true_acc={dr.true_acc:.2f}  exploit_rate={dr.exploit_rate:.2f}")
     print("    -> DPO hacks under a gameable annotator, tracks truth under a verifiable one.")
 
+    from .detector import monitor_training
+    print("\n[7] online hacking detector (training-time immune system):")
+    for ch in (VerifiableReward(), GameableReward()):
+        det, _ = monitor_training(ch, ProxyTask(p_solve=0.5, seed=seed), iters=200, seed=seed)
+        print(f"    {ch.name:11s} fired_at={det.fired_at}  (audits the loop; flags reward-PASS & oracle-WRONG)")
+    print("    -> flags the gameable reward early, stays silent on the verifiable control.")
+
     print("\nInterpretation: the verifiable-reward control tracks truth; the gameable reward")
     print("decouples (Goodhart) and the loop learns the exploit, which the witnessed fork")
     print("localizes to the favoured phrase -- the Wind Tunnel thesis, now in the training loop.")

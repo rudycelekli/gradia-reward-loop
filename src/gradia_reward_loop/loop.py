@@ -30,14 +30,16 @@ class LoopResult:
 
 
 def train_policy(channel: RewardChannel, task: ProxyTask, iters: int = 200,
-                 batch: int = 64, lr: float = 0.3, seed: int = 0) -> LoopResult:
+                 batch: int = 64, lr: float = 0.3, seed: int = 0, callback=None) -> LoopResult:
     rng = np.random.default_rng(seed)
     theta = np.zeros(task.n_actions)
     baseline = 0.0
     mon = GoodhartMonitor(channel.name)
     exploits: list = []
-    for _ in range(iters):
+    for _it in range(iters):
         p = _softmax(theta)
+        if callback is not None:
+            callback(_it, p)
         acts = rng.choice(task.n_actions, size=batch, p=p)
         proxy = np.zeros(batch)
         true = np.zeros(batch)
