@@ -16,6 +16,8 @@ def main(argv=None) -> int:
     sub.add_parser("figures", help="(re)generate the publication figures")
     vp = sub.add_parser("verify", help="verify an evidence bundle directory")
     vp.add_argument("bundle_dir")
+    pp = sub.add_parser("verify-pair", help="verify matched verifiable/gameable M2 bundles")
+    pp.add_argument("pair_dir")
     tp = sub.add_parser("train", help="real GRPO on a small LLM (needs .[real] + GPU)")
     tp.add_argument("--channel", choices=["gameable", "verifiable"], default="gameable")
     args = ap.parse_args(argv)
@@ -41,7 +43,14 @@ def main(argv=None) -> int:
         print(json.dumps(provenance(), indent=2))
     elif args.cmd == "verify":
         from .evidence import verify_bundle
-        print(json.dumps(verify_bundle(args.bundle_dir), indent=2))
+        result = verify_bundle(args.bundle_dir)
+        print(json.dumps(result, indent=2))
+        return 0 if result["ok"] else 1
+    elif args.cmd == "verify-pair":
+        from .evidence import verify_pair
+        result = verify_pair(args.pair_dir)
+        print(json.dumps(result, indent=2))
+        return 0 if result["ok"] else 1
     elif args.cmd == "train":
         from .rewards import GameableReward, VerifiableReward
         ch = GameableReward() if args.channel == "gameable" else VerifiableReward()

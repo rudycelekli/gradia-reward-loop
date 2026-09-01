@@ -12,6 +12,7 @@ import numpy as np
 @dataclass
 class RewardHackingReport:
     channel: str
+    step_curve: list = field(default_factory=list)
     proxy_curve: list = field(default_factory=list)
     true_curve: list = field(default_factory=list)
 
@@ -51,6 +52,9 @@ class GoodhartMonitor:
     def __init__(self, channel: str):
         self.report = RewardHackingReport(channel=channel)
 
-    def record(self, proxy_mean: float, true_mean: float) -> None:
+    def record(self, proxy_mean: float, true_mean: float, step: int | None = None) -> None:
+        self.report.step_curve.append(
+            int(step) if step is not None else len(self.report.step_curve)
+        )
         self.report.proxy_curve.append(float(proxy_mean))
         self.report.true_curve.append(float(true_mean))

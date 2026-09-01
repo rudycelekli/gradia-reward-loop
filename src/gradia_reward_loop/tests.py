@@ -6,6 +6,7 @@ not just the plumbing.
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import sys
 import tempfile
@@ -24,9 +25,11 @@ from . import (
     train_policy,
     train_ppo,
 )
-from .evidence import verify_bundle, write_bundle
+from .evidence import verify_bundle, verify_pair, write_bundle
 from .grpo import group_relative_advantages
 from .localize import localize_reward_exploit
+from .monitor import GoodhartMonitor
+from .tasks_llm import make_judge
 
 _checks: list = []
 
@@ -58,6 +61,16 @@ def main() -> int:
     except ValueError:
         ragged = True
     check("GRPO advantages reject a ragged group size", ragged)
+
+    monitor = GoodhartMonitor("test")
+    monitor.record(0.5, 0.25, step=7)
+    check("Goodhart monitor preserves exact evaluation steps", monitor.report.step_curve == [7])
+    m2_judge = make_judge({"p": "42"}, ("therefore",))
+    check(
+        "M2 judge binds a case-insensitive surface signal independently of oracle truth",
+        m2_judge("p", "THEREFORE #### 41").has_phrase
+        and not m2_judge("p", "THEREFORE #### 41").correct,
+    )
 
     # --- reward channels ---
     ver, gam = VerifiableReward(), GameableReward()
@@ -104,6 +117,21 @@ def main() -> int:
     lines = fp.read_text().splitlines(); lines[3] = lines[3].replace("proxy", "proxi")
     fp.write_text("\n".join(lines))
     check("evidence bundle detects a tampered frame", not verify_bundle(d)["ok"])
+
+    pair_root = pathlib.Path(tempfile.mkdtemp())
+    contract = {"schema": "test-pair.v1", "seed": 7}
+    from .evidence import _canon, _sha
+    contract_sha = _sha(_canon(contract))
+    for channel in ("verifiable", "gameable"):
+        bundle = pair_root / channel
+        write_bundle(
+            bundle, f"test-{channel}", [{"step": 0}],
+            {"channel": channel, "pair_contract_sha256": contract_sha},
+        )
+        (bundle / "pair-contract.json").write_text(json.dumps(contract))
+    check("paired verifier requires two valid bundles under one contract", verify_pair(pair_root)["ok"])
+    (pair_root / "gameable" / "pair-contract.json").write_text(json.dumps({"seed": 8}))
+    check("paired verifier rejects a divergent treatment contract", not verify_pair(pair_root)["ok"])
 
     # --- determinism ---
     a1 = train_policy(gam, ProxyTask(seed=7), iters=100, seed=7).action_probs

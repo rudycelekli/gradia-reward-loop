@@ -4,6 +4,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+.venv/
 # RL run scratch; committed demo evidence lives under runs/committed/ (force-added)
 runs/*
 !runs/committed/

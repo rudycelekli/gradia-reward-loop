@@ -1,18 +1,20 @@
 # Real GRPO (Milestone M2) — how to run it on a GPU
 
-Everything under `make demo` / `make test` runs on a laptop. The LLM milestones need one GPU
-(a 0.5–3B model with LoRA fits a single 24–80 GB card; a few H100/A100 hours is plenty).
+Everything under `make demo` / `make test` runs on a laptop. The LLM milestone uses one CUDA or
+Apple MPS accelerator. The admitted M2 contract is frozen in
+`preregistrations/M2-PAIRED-GRPO.md`.
 
-## Local (a machine with a CUDA GPU)
+## Local
 
 ```bash
-pip install -e '.[real,gradia]'
-python scripts/train_grpo.py --channel verifiable --steps 200   # RLVR control: no Goodhart gap
-python scripts/train_grpo.py --channel gameable   --steps 200   # reproduce reward hacking
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -e ../gradia-wind-tunnel -e '.[real,dev]'
+.venv/bin/python scripts/train_grpo.py --channel verifiable --steps 300 --seed 20260901
+.venv/bin/python scripts/train_grpo.py --channel gameable --steps 300 --seed 20260901
 ```
 
-Each run prints the final proxy/true/gap and writes a hash-chained evidence bundle under
-`runs/`; verify it with `gradia-reward-loop verify runs/<bundle>`.
+Each run writes a hash-chained bundle under one pair directory. Verify both arms and their shared
+contract with `gradia-reward-loop verify-pair runs/m2/<pair-id>`.
 
 ## Rented GPU
 
