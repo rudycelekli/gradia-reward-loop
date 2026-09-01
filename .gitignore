@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+# RL run scratch; committed demo evidence lives under runs/committed/ (force-added)
+runs/*
+!runs/committed/
+!runs/committed/**
+*.log
