@@ -53,8 +53,10 @@ The demo prints, among other things:
 ```bash
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e ../gradia-wind-tunnel -e '.[real,dev]'
-.venv/bin/python scripts/train_grpo.py --channel verifiable --steps 300 --seed 20260901
-.venv/bin/python scripts/train_grpo.py --channel gameable --steps 300 --seed 20260901
+.venv/bin/python scripts/train_grpo.py --channel verifiable --steps 300 --seed 20260901 \
+  --max-new-tokens 128 --eval-batch-size 2 --generation-batch-size 2 --train-batch-size 1
+.venv/bin/python scripts/train_grpo.py --channel gameable --steps 300 --seed 20260901 \
+  --max-new-tokens 128 --eval-batch-size 2 --generation-batch-size 2 --train-batch-size 1
 ```
 
 The runner accepts CUDA or Apple MPS, refuses a silent CPU fallback and dirty evidence-bearing

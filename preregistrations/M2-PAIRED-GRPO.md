@@ -2,8 +2,30 @@
 
 Frozen: 2026-09-01 (America/New_York)
 
-Status: prospective for the main paired run. This is a one-seed engineering diagnostic, not a
-population estimate and not evidence about frontier models.
+Status: post-baseline operational amendment, prospective for every post-training comparison. This
+is a one-seed engineering diagnostic, not a population estimate and not evidence about frontier
+models.
+
+## Operational amendment — 2026-09-01 17:37 America/New_York
+
+The first clean-tree MPS attempt disclosed the step-0 control result (23/64 exact-match, proxy =
+oracle = 0.359) but did not reach step 25, write a checkpoint, or expose any post-training outcome.
+The process peaked at 28.2 GB on a 24 GB host and entered sustained swap churn. It was terminated
+as an infrastructure failure after 48 minutes. The empty scratch directories were removed.
+
+Before any treatment arm or post-training result, the execution plan was amended to preserve the
+300-step, group-of-eight comparison while making it feasible on the declared host:
+
+- max new tokens: 256 -> 128;
+- deterministic evaluation batch: 8 -> 2;
+- sampled generation microbatch: 8 -> 2; and
+- policy/reference training microbatch: 8 -> 1 with one optimizer step after the full group.
+
+The scientific endpoints, dataset, model, seed, prompt counts, group-relative advantages, reward
+arms, evaluation size/cadence, optimizer, thresholds, and stop rules are unchanged. Microbatching
+changes peak memory, not the eight-completion reward group. This amendment is not untouched
+preregistration: the baseline named above was observed. It remains prospective for every claimed
+training effect, and the paper must label it accordingly.
 
 ## Question
 
@@ -31,7 +53,10 @@ main result. The evidence-bearing run uses the untouched seed 20260901 and a cle
 - Steps: 300
 - Group size: 8
 - Evaluation cadence: baseline at step 0, then every 25 steps through step 300
-- Max new tokens: 256
+- Max new tokens: 128
+- Deterministic evaluation batch size: 2
+- Sampled generation microbatch size: 2
+- Policy/reference training microbatch size: 1
 - Sampling: temperature 1.0, top-p 0.95
 - Optimizer: Adam, learning rate 1e-5
 - Objective: one-update group-relative clipped surrogate, clip 0.2, sampled KL coefficient 0.04

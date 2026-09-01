@@ -56,6 +56,8 @@ class GRPOConfig:
     eval_every: int = 25
     eval_n: int = 64
     eval_batch_size: int = 8
+    generation_batch_size: int = 2
+    train_batch_size: int = 1
     device: str = "auto"
     allow_cpu: bool = False
 
@@ -145,6 +147,8 @@ class GRPOTrainer:
                     "oracle_pass": truth,
                     "has_favored_phrase": bool(answer.has_phrase),
                 })
+            if policy.device.type == "mps":
+                torch.mps.empty_cache()
         if was_training:
             policy.train()
         return {
@@ -235,10 +239,23 @@ class GRPOTrainer:
             plen = enc["input_ids"].shape[1]
             with torch.no_grad():
                 policy.eval()
-                gen = policy.generate(**enc, do_sample=True, top_p=self.cfg.top_p,
-                                      temperature=self.cfg.temperature,
-                                      num_return_sequences=G, max_new_tokens=self.cfg.max_new_tokens,
-                                      pad_token_id=tok.pad_token_id)
+                chunks = []
+                for start in range(0, G, self.cfg.generation_batch_size):
+                    count = min(self.cfg.generation_batch_size, G - start)
+                    chunks.append(policy.generate(
+                        **enc, do_sample=True, top_p=self.cfg.top_p,
+                        temperature=self.cfg.temperature, num_return_sequences=count,
+                        max_new_tokens=self.cfg.max_new_tokens,
+                        pad_token_id=tok.pad_token_id,
+                    ))
+                max_len = max(chunk.shape[1] for chunk in chunks)
+                padded = [
+                    torch.nn.functional.pad(
+                        chunk, (0, max_len - chunk.shape[1]), value=tok.pad_token_id
+                    )
+                    for chunk in chunks
+                ]
+                gen = torch.cat(padded, dim=0)
                 policy.train()
             attn = (gen != tok.pad_token_id).long()
             comps = [tok.decode(g[plen:], skip_special_tokens=True) for g in gen]
@@ -248,24 +265,39 @@ class GRPOTrainer:
                 group_relative_advantages(rewards, G), dtype=torch.float32, device=device
             )
 
-            with torch.no_grad():
-                logp_ref = seq_logprob(ref, gen, attn, plen)
-            logp_new = seq_logprob(policy, gen, attn, plen)
-            logp_old = logp_new.detach()
-            ratio = torch.exp(logp_new - logp_old)
-            surr = torch.min(ratio * adv,
-                             torch.clamp(ratio, 1 - self.cfg.clip, 1 + self.cfg.clip) * adv)
-            kl = logp_new - logp_ref
-            loss = -(surr - self.cfg.kl_coef * kl).mean()
-            if not torch.isfinite(loss):
-                raise RuntimeError(f"non-finite loss at optimizer step {step + 1}")
-            opt.zero_grad(); loss.backward()
+            opt.zero_grad()
+            loss_value = 0.0
+            kl_value = 0.0
+            for start in range(0, G, self.cfg.train_batch_size):
+                end = min(start + self.cfg.train_batch_size, G)
+                ids_chunk = gen[start:end]
+                attn_chunk = attn[start:end]
+                adv_chunk = adv[start:end]
+                with torch.no_grad():
+                    logp_ref = seq_logprob(ref, ids_chunk, attn_chunk, plen)
+                logp_new = seq_logprob(policy, ids_chunk, attn_chunk, plen)
+                logp_old = logp_new.detach()
+                ratio = torch.exp(logp_new - logp_old)
+                surr = torch.min(
+                    ratio * adv_chunk,
+                    torch.clamp(ratio, 1 - self.cfg.clip, 1 + self.cfg.clip) * adv_chunk,
+                )
+                kl = logp_new - logp_ref
+                micro_loss = -(surr - self.cfg.kl_coef * kl).mean()
+                if not torch.isfinite(micro_loss):
+                    raise RuntimeError(f"non-finite loss at optimizer step {step + 1}")
+                weight = (end - start) / G
+                (micro_loss * weight).backward()
+                loss_value += float(micro_loss.detach().cpu()) * weight
+                kl_value += float(kl.detach().mean().cpu()) * weight
             grad_norm = torch.nn.utils.clip_grad_norm_(
                 (p for p in policy.parameters() if p.requires_grad), self.cfg.max_grad_norm
             )
             if not torch.isfinite(grad_norm):
                 raise RuntimeError(f"non-finite gradient norm at optimizer step {step + 1}")
             opt.step()
+            if device.type == "mps":
+                torch.mps.empty_cache()
 
             completed = step + 1
             sample_proxy_passes = int(sum(r >= 0.5 for r in rewards))
@@ -286,8 +318,8 @@ class GRPOTrainer:
                 "proxy": sample_proxy_passes / G,
                 "true": sample_oracle_passes / G,
                 "gap": (sample_proxy_passes - sample_oracle_passes) / G,
-                "loss": round(float(loss.detach().cpu()), 8),
-                "kl_sample_mean": round(float(kl.detach().mean().cpu()), 8),
+                "loss": round(loss_value, 8),
+                "kl_sample_mean": round(kl_value, 8),
                 "grad_norm": round(float(grad_norm.detach().cpu()), 8),
             })
             if (monitor is not None and self.eval_prompts

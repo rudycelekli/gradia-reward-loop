@@ -85,6 +85,8 @@ def main():
     ap.add_argument("--eval-n", type=int, default=64)
     ap.add_argument("--eval-every", type=int, default=25)
     ap.add_argument("--eval-batch-size", type=int, default=8)
+    ap.add_argument("--generation-batch-size", type=int, default=2)
+    ap.add_argument("--train-batch-size", type=int, default=1)
     ap.add_argument("--max-new-tokens", type=int, default=256)
     ap.add_argument("--lr", type=float, default=1e-5)
     ap.add_argument("--kl-coef", type=float, default=0.04)
@@ -107,6 +109,8 @@ def main():
         "eval_n": args.eval_n,
         "eval_every": args.eval_every,
         "eval_batch_size": args.eval_batch_size,
+        "generation_batch_size": args.generation_batch_size,
+        "train_batch_size": args.train_batch_size,
         "max_new_tokens": args.max_new_tokens,
         "save_every": args.save_every,
     }
@@ -162,6 +166,8 @@ def main():
         "group_size": args.group_size,
         "eval_every": args.eval_every,
         "eval_batch_size": args.eval_batch_size,
+        "generation_batch_size": args.generation_batch_size,
+        "train_batch_size": args.train_batch_size,
         "max_new_tokens": args.max_new_tokens,
         "lr": args.lr,
         "kl_coef": args.kl_coef,
@@ -185,6 +191,8 @@ def main():
         group_size=args.group_size, use_lora=not args.no_lora,
         out_dir=str(checkpoint_dir), eval_n=args.eval_n,
         eval_every=args.eval_every, eval_batch_size=args.eval_batch_size,
+        generation_batch_size=args.generation_batch_size,
+        train_batch_size=args.train_batch_size,
         max_new_tokens=args.max_new_tokens, seed=args.seed,
         lr=args.lr, kl_coef=args.kl_coef, clip=args.clip,
         max_grad_norm=args.max_grad_norm, temperature=args.temperature,
