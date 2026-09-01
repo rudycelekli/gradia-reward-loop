@@ -9,3 +9,5 @@ runs/*
 !runs/committed/
 !runs/committed/**
 *.log
+paper/_header.tex
+paper/*.tmp.md
