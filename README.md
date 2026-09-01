@@ -8,15 +8,35 @@ the same hash-chained evidence bundles — now on the reward signal of a live RL
 A benchmark scorer is graded once; an RL reward model is queried millions of times by an
 optimizer that is *trying* to find its seams. This repo shows, reproducibly and with no GPU,
 that a gameable reward gets hacked in the loop while a verifiable-reward control does not — and
-that the Wind Tunnel's causal instrument localizes the exploited feature.
+that the Wind Tunnel's exact single-variable intervention localizes the exploited feature under
+explicit fidelity assumptions.
+
+**[Read the research paper (PDF)](paper/PAPER.pdf)** · [Methods and results](NOTE.md) ·
+[Research program and milestones](PROGRAM.md)
+
+## Claim boundary
+
+- **Established here:** in the controlled offline system, policy-gradient optimization and DPO
+  exploit a specified proxy; oracle-witnessed counterfactual intervention localizes the exploited
+  feature; an online detector fires on the gameable channel and raises zero alarms in the one
+  matched control run.
+- **Reproducible here:** fixed-seed experiments, 36 property/control checks, regenerated figures,
+  and a tamper-evident core trajectory whose manifest and frame chain verify offline.
+- **Not yet claimed:** universal reward-hacking detection, a false-positive-rate estimate,
+  production-scale LLM training evidence, or causal discovery without a candidate intervention
+  and a valid single-variable transform. Milestone M2 is implemented but has not yet been run.
 
 ## Quickstart (no GPU, no network)
 
 ```bash
 make demo      # end-to-end: PPO learns a toy MDP; a gameable reward gets hacked while a
                # verifiable-reward control does not; the exploit is localized; evidence verified
-make test      # 20 property/control checks (gates the science, not just the plumbing)
+make test      # 36 property/control checks (gates the science, not just the plumbing)
 make ppo-toy   # the from-scratch PPO learning curve
+make lint      # static lint gate
+make typecheck # strict type gate over the package
+make verify    # verify the committed manifest and frame chain
+python paper/build_pdf.py  # atomically rebuild the paper (Tectonic or XeLaTeX)
 ```
 
 The demo prints, among other things:
@@ -53,5 +73,11 @@ make train                        # GRPO on a small model (needs a GPU)
 
 See **[NOTE.md](NOTE.md)** for the write-up (abstract, results, figures) and **[PROGRAM.md](PROGRAM.md)** for the thesis, the four hypotheses, the mathematics this
 program demonstrates (PPO/GAE, GRPO, DPO, reward over-optimization), and the M0–M5 milestone plan.
+
+## Citation
+
+Citation metadata is available in [`CITATION.cff`](CITATION.cff). Until a DOI or archival venue is
+assigned, cite the versioned repository and paper together; do not treat the offline study as an
+LLM-scale result.
 
 *Part of the Gradia program by Rudy Celekli. Apache-2.0.*

@@ -40,8 +40,9 @@ channel of an RL loop.
   opens no gap and yields no witnessed exploits: the reward is ungameable by construction, so
   any gap under H1 is attributable to the reward's exploitability, not to RL itself.
 
-The offline demo already exhibits H1, H2, and C on a minimal task; H3 and the LLM-scale
-versions are the milestones below.
+The offline artifact exhibits H1–H3 and C on a minimal task, including repair relocation,
+objective breadth, a learned reward model, an optimization-pressure sweep, and online detection.
+The LLM-scale versions remain the prospective milestones below.
 
 ## What is reused from Gradia (this is Pillar 4, not a fresh start)
 
@@ -49,7 +50,7 @@ versions are the milestones below.
 - **FAVORED_PHRASES** / the transform catalog — the gameable reward is the Wind Tunnel's
   `KeywordGaming` failure mode used as an RL reward.
 - The **witnessed single-variable fork** — `localize.localize_reward_exploit` is the Wind
-  Tunnel's causal instrument pointed at the reward channel; `validated` uses the same rule
+  Tunnel's intervention instrument pointed at the reward channel; `validated` uses the same rule
   (held-out flip rate strictly above baseline and above zero).
 - The **verifiable oracle** — `VerifiableReward` wraps the Wind Tunnel oracle → RLVR.
 - The **hash-chained evidence bundle** — every run recomputes offline and is tamper-evident;
@@ -65,9 +66,10 @@ role asks for, made concrete rather than asserted.
 **Policy gradient.** $\nabla_\theta J = \mathbb{E}\big[\nabla_\theta \log \pi_\theta(a\mid s)\,A(s,a)\big]$.
 For the softmax policy in `ppo.py`, $\nabla_z \log\pi(a\mid s) = e_a - \pi(\cdot\mid s)$ in closed form.
 
-**PPO-clip + GAE.** With ratio $r_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\text{old}}$,
-$$L=\mathbb{E}\big[\min\big(r_t A_t,\ \mathrm{clip}(r_t,1-\epsilon,1+\epsilon)A_t\big)\big],\quad
-A_t=\sum_{l\ge 0}(\gamma\lambda)^l\delta_{t+l},\ \ \delta_t=r_t+\gamma V(s_{t+1})-V(s_t).$$
+**PPO-clip + GAE.** With importance ratio
+$\rho_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\text{old}}(a_t\mid s_t)$,
+$$L=\mathbb{E}\big[\min\big(\rho_t A_t,\ \mathrm{clip}(\rho_t,1-\epsilon,1+\epsilon)A_t\big)\big],\quad
+A_t=\sum_{l\ge 0}(\gamma\lambda)^l\delta_{t+l},\ \ \delta_t=R_t+\gamma V(s_{t+1})-V(s_t).$$
 `ppo.py` implements this with hand-derived gradients (no autograd) and learns the optimal
 gridworld policy from a random start.
 
@@ -88,12 +90,15 @@ measures. The KL penalty is the trust-region knob trading proxy gain against dri
 
 ## Milestones
 
-- **M0 — Scaffold (shipped, green).** Package; from-scratch PPO that learns the toy MDP; the
-  two reward channels; the RL loop; the Goodhart monitor; the witnessed localizer;
-  hash-chained evidence; an offline demo; a 20-check property/control suite. *Runnable with
+- **M0 — Offline instrument (shipped, green).** Package; from-scratch PPO that learns the toy MDP;
+  reward channels; the RL loop; the Goodhart monitor; witnessed localization; patch-and-retrain
+  repair; objective breadth; learned-reward and pressure sweeps; online detection; hash-chained
+  evidence; and a 36-check property/control suite. *Runnable with
   `make demo` / `make test`, no GPU. Proves the engineering and the full instrument.*
-- **M1 — PPO internals (shipped code).** The derivation above matched to `ppo.py` with the
-  learning curve. *Proves algorithmic depth — implementing the algorithm, not calling a library.*
+- **M1 — Methods paper (shipped).** The derivations are matched to the implementation; the
+  eight figures regenerate from pinned code and seeds, and the core trajectory plus localization
+  summary are sealed in committed evidence. *Proves algorithmic
+  depth and a reproducible offline result, not language-model-scale validity.*
 - **M2 — GRPO on a small LLM under a verifiable reward (RLVR).** Qwen2.5-0.5B + LoRA on
   GSM8K-style items, reward = oracle; expect true accuracy to rise with no gap — the control at
   real scale. *Proves hands-on RL training.*
@@ -122,7 +127,8 @@ Tunnel manifest, so one verifier discipline spans Pillars 1–4.
 
 ## Status
 
-M0 shipped and green (20/20 checks; demo bundle verifies). M1 code shipped, writeup to expand.
-M2–M5 are the build path above.
+M0–M1 are shipped and green (36/36 checks; demo bundle verifies; paper PDF rebuilds). The M2
+trainer is implemented with LoRA, checkpointing, and evaluation, but no live LLM result is
+claimed. M2–M5 remain the prospective empirical scale-up.
 
 *Part of the Gradia program by Rudy Celekli. Apache-2.0.*

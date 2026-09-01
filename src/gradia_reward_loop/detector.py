@@ -4,8 +4,9 @@ The Wind Tunnel witnesses exploits by spot-auditing with an oracle. The detector
 each window during training: on a small sample from the current policy it estimates the
 witnessed-exploit rate (reward-PASS AND oracle-WRONG) and the proxy-oracle gap, and raises an alarm
 when both cross a threshold for `patience` consecutive windows -- early, before the policy has fully
-hacked. On the verifiable-reward control it never fires. This is the detection half of an immune
-system whose repair half is repair.run_repair.
+hacked. The committed matched verifiable-control run produces zero alarms; that is a negative
+control, not an estimated false-positive rate. This is the detection half of an immune system whose
+repair half is repair.run_repair.
 """
 from __future__ import annotations
 

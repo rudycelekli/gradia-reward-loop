@@ -149,7 +149,7 @@ def main() -> int:
     det_g, res_g = monitor_training(GameableReward(), ProxyTask(p_solve=0.5, seed=1), iters=200, seed=1)
     det_v, _ = monitor_training(VerifiableReward(), ProxyTask(p_solve=0.5, seed=1), iters=200, seed=1)
     check("detector fires on the gameable reward", det_g.fired_at is not None)
-    check("detector does not false-positive on the verifiable control", det_v.fired_at is None)
+    check("detector raises zero alarms in the matched verifiable control", det_v.fired_at is None)
     gap_at = next(g for i, g, e in det_g.trace if i == det_g.fired_at)
     check("detector catches the hack before it saturates", gap_at < res_g.report.final_gap - 0.1)
 

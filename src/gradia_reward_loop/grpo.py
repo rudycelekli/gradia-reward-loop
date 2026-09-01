@@ -101,7 +101,7 @@ class GRPOTrainer:
             tok.pad_token = tok.eos_token
         policy = AutoModelForCausalLM.from_pretrained(self.cfg.model)
         if self.cfg.use_lora:
-            from peft import LoraConfig, get_peft_model
+            from peft import LoraConfig, get_peft_model  # type: ignore[import-not-found,import-untyped]
             policy = get_peft_model(policy, LoraConfig(
                 r=self.cfg.lora_r, lora_alpha=self.cfg.lora_alpha,
                 lora_dropout=self.cfg.lora_dropout,

@@ -11,14 +11,14 @@ from pathlib import Path
 
 def _ensure_on_path() -> bool:
     try:
-        import gradia_wind_tunnel  # noqa: F401
+        import gradia_wind_tunnel  # type: ignore[import-not-found,import-untyped]  # noqa: F401
         return True
     except Exception:
         sib = Path(__file__).resolve().parents[3] / "gradia-wind-tunnel" / "src"
         if sib.exists() and str(sib) not in sys.path:
             sys.path.insert(0, str(sib))
         try:
-            import gradia_wind_tunnel  # noqa: F401
+            import gradia_wind_tunnel  # type: ignore[import-not-found,import-untyped]  # noqa: F401
             return True
         except Exception:
             return False
@@ -33,7 +33,7 @@ _FALLBACK_PHRASES = ["Let's think step by step.", "As an expert, the answer is c
 def favored_phrases() -> list[str]:
     if AVAILABLE:
         try:
-            from gradia_wind_tunnel import FAVORED_PHRASES
+            from gradia_wind_tunnel import FAVORED_PHRASES  # type: ignore[import-not-found,import-untyped]
             if FAVORED_PHRASES:
                 return list(FAVORED_PHRASES)
         except Exception:

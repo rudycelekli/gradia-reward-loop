@@ -25,7 +25,7 @@ def extract_final_number(text: str):
 
 def gsm8k_prompts(n: int = 64, split: str = "test", seed: int = 0):
     """Return (prompts, gold) where gold[prompt] is the reference final number."""
-    from datasets import load_dataset
+    from datasets import load_dataset  # type: ignore[import-untyped]
     ds = load_dataset("gsm8k", "main", split=split).shuffle(seed=seed)
     ds = ds.select(range(min(n, len(ds))))
     prompts, gold = [], {}

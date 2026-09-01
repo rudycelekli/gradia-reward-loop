@@ -33,8 +33,8 @@ class PPO:
     entropy_coef: float = 0.01
     vf_coef: float = 0.5
     seed: int = 0
-    W: np.ndarray = field(default=None, repr=False)
-    V: np.ndarray = field(default=None, repr=False)
+    W: np.ndarray = field(init=False, repr=False)
+    V: np.ndarray = field(init=False, repr=False)
 
     def __post_init__(self):
         self.W = np.zeros((self.n_features, self.n_actions))

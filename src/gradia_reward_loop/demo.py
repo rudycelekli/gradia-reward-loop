@@ -60,7 +60,7 @@ def run(iters: int = 250, seed: int = 1, write: bool = True):
     if write:
         summary = {"rows": [{"channel": n, "proxy": round(r.final_proxy, 4),
                              "true": round(r.final_true, 4), "gap": round(r.final_gap, 4),
-                             "hacked": r.hacked(), "localized": loc.validated}
+                             "hacked": r.hacked(), "localization": loc.as_dict()}
                             for n, r, loc in rows]}
         man = write_bundle(OUT, f"reward-loop-demo-seed{seed}", frames, summary)
         v = verify_bundle(OUT)

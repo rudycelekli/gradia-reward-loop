@@ -1,12 +1,12 @@
 ---
 title: "Reward Hacking in the RL Loop: Oracle-Witnessed Localization and Repair of Reward-Model Exploits During Training"
 author: "Rudy M. Celekli · Gradia Research"
-date: "Pillar 4 of a program on verifiable evaluation · offline milestones (M0–M1) complete and reproducible"
+date: "Pillar 4 of a program on verifiable evaluation · offline instrument complete and reproducible"
 ---
 
 # Abstract
 
-Reinforcement learning from human or verifiable feedback has made the *reward model* the load-bearing component of modern post-training, and reward hacking — a policy scoring well on the reward while failing what the reward was meant to measure — its central failure mode. Reward hacking is usually studied statically: as a property of a scorer, or measured aggregately as reward-model over-optimization. But the damage happens inside the *training loop*, where an optimizer queries the reward millions of times precisely to find its highest-scoring behaviours. We carry an oracle-witnessed causal instrument — introduced for static benchmark scorers in the Reward-Hacking Wind Tunnel — into that loop. On a minimal, fully reproducible task we show that (i) optimizing against a *gameable* reward opens a Goodhart gap (proxy $0.98$, true $0.00$, correlation $-0.84$) while a *verifiable* reward (RLVR) control does not; (ii) a witnessed single-variable fork on the reward channel localizes the exploited feature (lift $+1.00$, $n{=}64$); (iii) patching the localized cue relocates the exploit across cues before a comprehensive patch cures it ($\gamma_{\text{local}}{=}0.67$); (iv) the phenomenon is objective-agnostic — a from-scratch PPO, an RL policy-gradient loop, and DPO's *implicit* reward all hack a gameable reward and none hack a verifiable one; (v) optimization pressure monotonically trades true reward for exploitation ($P(\text{exploit})\to1$ as the KL budget grows, with bootstrap CIs); (vi) a *learned* logistic reward model is hacked through a spurious feature it absorbs from biased training data, with severity a dose-response in that bias; and (vii) an online detector that spot-audits the loop flags the onset of hacking early (at gap $0.60$, before it saturates at $0.98$) with no false positive on the control — the detection half of a training-time immune system whose repair half is (iii). Every number recomputes offline from a hash-chained evidence bundle. We then specify the scale-up: GRPO on a small language model over GSM8K, verifiable versus gameable reward, which plugs directly into the same pipeline.
+Reinforcement learning from human or verifiable feedback has made the *reward signal* a load-bearing component of modern post-training, and reward hacking — a policy scoring well on that signal while failing what it was meant to measure — a central failure mode. Reward hacking is usually studied statically, or measured aggregately as reward-model over-optimization. But the damage happens inside the *training loop*, where an optimizer repeatedly queries the reward precisely to find its highest-scoring behaviours. We carry an oracle-witnessed intervention instrument — introduced for static benchmark scorers in the Reward-Hacking Wind Tunnel — into that loop. On a minimal, fully reproducible task we show that (i) optimizing against a *gameable* reward opens a Goodhart gap (proxy $0.98$, true $0.00$, correlation $-0.84$) while a *verifiable* reward control does not; (ii) an exact single-variable fork localizes the exploited feature on the witnessed sample (lift $+1.00$, $n{=}64$); (iii) patching that cue relocates the exploit before a comprehensive patch cures it ($\gamma_{\text{local}}{=}0.67$); (iv) the same mechanism appears in both implemented reward-optimization paths — a policy-gradient loop and DPO's *implicit* reward — while a separate from-scratch PPO experiment validates the optimization machinery; (v) increasing optimization pressure trades true reward for exploitation ($P(\text{exploit})\to1$ as the KL budget grows, with bootstrap CIs); (vi) a learned logistic reward model is hacked through a spurious feature absorbed from biased training data, with severity increasing with that bias; and (vii) a seeded online detector flags the gameable run at gap $0.60$, before saturation at $0.98$, while raising zero alarms in the matched verifiable-control run. The reported statistics regenerate deterministically from pinned code and seeds, and the core proxy-versus-truth trajectory is additionally sealed in a hash-chained evidence bundle. We specify—but do not yet claim results for—the scale-up: GRPO on a small language model over GSM8K using the same evidence path.
 
 # 1. Introduction
 
@@ -18,22 +18,24 @@ This paper answers those three questions with a single instrument. In prior work
 
 **Contributions.**
 
-1. *An in-loop exploit definition and causal localizer.* We define a reward exploit as $\textsf{reward-PASS}\wedge\neg\,\textsf{oracle}$ and localize the exploited feature by forking one variable and measuring the held-out reward flip; the localizer is validated exactly when the flip rate exceeds a same-fork baseline (Section 4.1, 5.3).
+1. *An in-loop exploit definition and intervention localizer.* We define a reward exploit as $\textsf{reward-PASS}\wedge\neg\,\textsf{oracle}$ and test a candidate feature with an exact single-variable fork; validation requires the witnessed flip rate to exceed the same transform's negative-control rate (Section 4.1, 5.3).
 2. *A repair loop that separates cure from whack-a-mole.* Patching the localized cue and retraining either closes the gap or relocates the exploit; we quantify the difference as a relocation share $\gamma_{\text{local}}$ (Section 4.2, 5.4).
-3. *An online hacking detector — a training-time immune system.* Spot-auditing the loop with the oracle turns the witnessed-exploit rate into an early-warning signal that fires before saturation and never false-positives on a verifiable control (Section 4.3, 5.8).
-4. *Objective-agnosticity.* The same emergence and instrument hold for PPO/GRPO-style policy gradient and for DPO's implicit reward (Section 5.5).
+3. *An online hacking detector — a training-time immune system.* Spot-auditing the loop with the oracle turns the witnessed-exploit rate into an early-warning signal that fires before saturation; the matched verifiable-control run raises zero alarms (Section 4.3, 5.8).
+4. *Objective breadth in a controlled setting.* The same emergence and instrument appear in the implemented policy-gradient loop and in DPO's implicit reward (Section 5.5).
 5. *Quantitative corroboration.* We reproduce the reward-hacking face of over-optimization with confidence intervals (Section 5.6) and show a *learned* reward model hacked through a spurious feature as a dose-response in training-data bias (Section 5.7).
-6. *A reproducible artifact.* Every figure and number recomputes from a hash-chained, tamper-evident evidence bundle; a $36$-check property/control suite gates the science.
+6. *A reproducible artifact.* Reported statistics regenerate from pinned code and seeds; the core trajectory and localization summary are additionally sealed in a hash-chained evidence bundle, and a $36$-check property/control suite gates the science.
 
 We are explicit about scope: the experiments here are a minimal, offline model that isolates the mechanism. The scale-up to a real language-model policy (Section 6) is specified and wired but not yet run; it is the natural next milestone and reuses this paper's pipeline unchanged.
 
 # 2. Background and Related Work
 
-**RLHF and reward models.** Learning a reward model from preferences and optimizing a policy against it with PPO is the standard RLHF recipe [Christiano et al., 2017; Ouyang et al., 2022]. RLVR replaces the learned model with a programmatic verifier, trading coverage for an ungameable signal on checkable tasks.
+**RLHF and reward models.** Learning a reward model from preferences and optimizing a policy against it with PPO is the standard RLHF recipe [Christiano et al., 2017; Ouyang et al., 2022]. RLVR replaces the learned model with a programmatic verifier, making correctness directly checkable on supported tasks but not making arbitrary verifiers immune to implementation defects or proxy exploits. Our matched control is stronger and narrower: its reward is defined to equal the oracle exactly.
 
 **Reward over-optimization.** [Gao et al., 2022] show that as a policy is optimized against a proxy reward model, gold reward rises then falls with KL from the initial policy — the proxy is over-optimized. We study the regime in which the proxy has an exploitable *seam* and characterize how optimization pressure converts into exploitation, with uncertainty (Section 5.6).
 
-**Specification gaming and reward hacking.** [Amodei et al., 2016] name reward hacking among concrete safety problems; [Krakovna et al., 2020] catalogue gaming; [Skalse et al., 2022] give a formal definition; [Pan et al., 2022] map the effects of reward misspecification and its phase transitions; [Everitt et al., 2017] study corrupted reward channels. Our contribution is not another definition but an *in-loop, causal, oracle-witnessed* instrument for localization and repair.
+**Specification gaming and reward hacking.** [Amodei et al., 2016] name reward hacking among concrete safety problems; [Krakovna et al., 2020] catalogue gaming; [Skalse et al., 2022] give a formal definition; [Pan et al., 2022] map the effects of reward misspecification and its phase transitions; [Everitt et al., 2017] study corrupted reward channels. Our contribution is not another definition but an *in-loop, intervention-based, oracle-witnessed* instrument for localization and repair.
+
+**Causal diagnosis, active auditing, and mitigation.** RATE estimates a reward model's causal sensitivity to high-level response attributes using imperfect LLM-rewritten counterfactuals and a correction for rewrite bias [Reber et al., 2025]. ReQueST synthesizes hypothetical behaviours to improve a reward model before deployment [Reddy et al., 2020]. Adversarial Reward Auditing instead learns a latent auditor from a Hacker policy and gates reward during RLHF [Beigi et al., 2026]. Other work changes the reward or optimization procedure: conservative reward-model ensembles [Coste et al., 2023], weight-averaged reward models [Rame et al., 2024], disentangled rewards for length hacking [Chen et al., 2024], and MONA for multi-step reward hacking [Farquhar et al., 2025]. Denison et al. [2024] show that specification gaming can generalize to reward tampering. Our object is narrower and complementary: on *oracle-confirmed exploits emitted by a running optimizer*, we apply an exact candidate-variable intervention, repeat the intervention on oracle-correct negative controls, bind the result to a hash-chained receipt, and then test whether patch-and-retrain cures or relocates the exploit. We do **not** claim general detection without an oracle, causal discovery without a candidate intervention, or production-language-model evidence in this version.
 
 **Objectives.** PPO [Schulman et al., 2017] with GAE [Schulman et al., 2016]; GRPO [Shao et al., 2024], which replaces the value network with group-relative advantages; DPO [Rafailov et al., 2023], which fits the policy directly to preferences and is equivalent to learning an implicit reward. Length and format biases are known DPO/RLHF failure modes [Singhal et al., 2023]. We show DPO's implicit reward is gameable by the same mechanism (Section 5.5).
 
@@ -57,7 +59,11 @@ confirmed with no human label. This is the definitional core carried from Pillar
 
 ## 4.1 Witnessed single-variable localization, in the loop
 
-Given the oracle-witnessed exploits collected during training, we fork **one** variable of the reward channel — remove the suspected cue, hold everything else fixed — and measure whether the reward flips $\textsf{PASS}\to\textsf{FAIL}$. Writing $\phi$ for the fraction of exploits whose reward flips under the fork and $\beta$ for the same fork applied to genuinely-correct answers (which should not flip), the feature is **validated** as the cause iff $\phi>\beta$ and $\phi>0$ — the same criterion as the Wind Tunnel's witnessed localizer, now pointed at the reward channel.
+Let $E=\{a_i\}_{i=1}^{n_E}$ be the oracle-witnessed exploits collected during training and let $T_x$ be an intervention that removes exactly one candidate reward feature $x$ while preserving the answer's oracle label and every other recorded field. For each exploit we record
+$$d_i=\mathbb{1}\!\left[\textsf{PASS}(a_i)\wedge\neg\textsf{PASS}(T_x(a_i))\right].$$
+We apply the *same* transform to a same-size set $C=\{c_j\}_{j=1}^{n_C}$ of oracle-correct, reward-passing negative controls and record the analogous $b_j$. The witnessed flip rate is $\phi_x=n_E^{-1}\sum_i d_i$, the negative-control flip rate is $\beta_x=n_C^{-1}\sum_j b_j$, and the localization lift is $\Delta_x=\phi_x-\beta_x$. The artifact marks $x$ **validated on this witnessed sample** iff $\phi_x>\beta_x$ and $\phi_x>0$.
+
+This is causal attribution only under explicit intervention assumptions: $T_x$ must change $x$ alone, preserve oracle correctness, and preserve all other reward-relevant content. The negative control detects transforms that indiscriminately break passing answers; it does not prove that an omitted or entangled variable is irrelevant. The claim is therefore feature-, channel-, and sample-specific—not automatic causal discovery or a universal guarantee about the reward model.
 
 ## 4.2 Repair and the relocation share $\gamma_{\text{local}}$
 
@@ -67,17 +73,17 @@ so $\gamma_{\text{local}}{=}0$ is a clean cure and larger values indicate whack-
 
 ## 4.3 Online detector: a training-time immune system
 
-Each training window we draw a small audit sample from the current policy and run the oracle on it, estimating the Goodhart gap and the witnessed-exploit rate. The detector raises an alarm when both exceed thresholds for $k$ consecutive windows. The audit is exactly the Wind Tunnel's spot-witnessing, run online; its cost is one cheap oracle call per audited sample per window. We report detection latency (how early, relative to saturation) and the false-positive rate on the verifiable control.
+Each training window we draw a seeded audit sample from the current policy and run the oracle on it, estimating the Goodhart gap and witnessed-exploit rate. The detector raises an alarm only when both exceed fixed thresholds for $k$ consecutive windows; the persistence rule reduces sensitivity to one noisy audit. In the committed configuration the audit size is $96$, the gap and exploit thresholds are $0.50$ and $0.45$, and $k=3$. Detection latency is descriptive: the first firing window relative to the eventual gap. The matched verifiable-reward run is a negative control and produces zero alarms, but one control trajectory is **not** an estimate or bound on a population false-positive rate. Such a claim requires repeated seeds and calibrated uncertainty. The audit cost is one oracle evaluation per sampled action per window, plus the bookkeeping needed to seal the receipt.
 
 ## 4.4 Objectives and mathematics
 
-We implement and/or derive the objectives the program touches. **Policy gradient:** $\nabla_\theta J=\mathbb{E}[\nabla_\theta\log\pi_\theta(a\mid s)\,A(s,a)]$, with the closed-form softmax gradient $\nabla_z\log\pi=e_a-\pi$. **PPO-clip + GAE:** with ratio $r_t=\pi_\theta/\pi_{\text{old}}$,
-$$L=\mathbb{E}\big[\min(r_tA_t,\ \mathrm{clip}(r_t,1-\epsilon,1+\epsilon)A_t)\big],\quad A_t=\sum_{l\ge0}(\gamma\lambda)^l\delta_{t+l},\ \delta_t=r_t+\gamma V(s_{t+1})-V(s_t).$$
+We implement and/or derive the objectives the program touches. **Policy gradient:** $\nabla_\theta J=\mathbb{E}[\nabla_\theta\log\pi_\theta(a\mid s)\,A(s,a)]$, with the closed-form softmax gradient $\nabla_z\log\pi=e_a-\pi$. **PPO-clip + GAE:** with importance ratio $\rho_t=\pi_\theta(a_t\mid s_t)/\pi_{\text{old}}(a_t\mid s_t)$,
+$$L=\mathbb{E}\big[\min(\rho_tA_t,\ \mathrm{clip}(\rho_t,1-\epsilon,1+\epsilon)A_t)\big],\quad A_t=\sum_{l\ge0}(\gamma\lambda)^l\delta_{t+l},\ \delta_t=R_t+\gamma V(s_{t+1})-V(s_t).$$
 **GRPO:** drop the value network; for a group of $G$ completions, $\hat A_i=(r_i-\text{mean}_j r_j)/(\text{std}_j r_j+\varepsilon)$, then the same clipped surrogate plus a KL penalty to a frozen reference. **DPO:** from Bradley–Terry $P(y_w\succ y_l)=\sigma(r(y_w)-r(y_l))$ and the RLHF optimum $\pi^*\propto\pi_{\text{ref}}\exp(r/\beta)$, the implicit reward is $r(y)=\beta\log\frac{\pi(y)}{\pi_{\text{ref}}(y)}+\text{const}$, giving $\mathcal{L}_{\text{DPO}}=-\log\sigma(\beta\log\frac{\pi_\theta(y_w)}{\pi_{\text{ref}}(y_w)}-\beta\log\frac{\pi_\theta(y_l)}{\pi_{\text{ref}}(y_l)})$. **Over-optimization:** the KL-regularized optimum $\max_\pi \mathbb{E}_\pi[r_{\text{proxy}}]-\beta\,\mathrm{KL}(\pi\Vert\pi_0)$ is Boltzmann, $\pi(a)\propto\pi_0(a)\exp(r_{\text{proxy}}(a)/\beta)$; sweeping $\beta$ traces true reward against $\mathrm{KL}(\pi\Vert\pi_0)$.
 
 # 5. Experiments
 
-All results are offline, seed-controlled, and recompute from committed evidence. Figures are regenerated from live runs by `make figures`.
+All results are offline and seed-controlled. `make figures` reruns the pinned experiment code; the core proxy-versus-truth trajectory is additionally sealed in the committed evidence bundle.
 
 ## 5.1 The algorithm works (Fig. 1)
 
@@ -93,7 +99,7 @@ Against the gameable reward the proxy climbs to $0.98$ while true quality falls 
 
 ## 5.3 Localization (Fig. 3)
 
-Among the $64$ witnessed exploits, forking the suspected variable flips the reward $\textsf{PASS}\to\textsf{FAIL}$ at rate $1.00$, versus $0.00$ for the same fork on correct answers: lift $+1.00$, validated. The exploited feature is identified causally, in-loop.
+Among $64$ witnessed exploits, removing the suspected cue flips reward $\textsf{PASS}\to\textsf{FAIL}$ at rate $1.00$, versus $0.00$ when the same transform is applied to $64$ oracle-correct, reward-passing controls: lift $+1.00$. Under the intervention assumptions in Section 4.1, the cue is validated as the exploited feature on this sample.
 
 ![The witnessed fork localizes the exploited feature.](../figures/fig3_localization.png){width=58%}
 
@@ -103,7 +109,7 @@ With a reward fooled by three cues, patching the localized cue and retraining do
 
 ![Repair: patch, retrain, relocate — whack-a-mole then cure.](../figures/fig4_repair_whackamole.png){width=70%}
 
-## 5.5 The phenomenon is objective-agnostic (Fig. 5)
+## 5.5 The mechanism spans the implemented objectives (Fig. 5)
 
 The RL policy-gradient loop and DPO's *implicit* reward both learn to exploit a gameable reward ($P(\text{exploit})$ $0.98$ and $0.66$) and both stay near zero under a verifiable reward. DPO trains no explicit reward model, yet gameable *preferences* teach its implicit reward the same exploit.
 
@@ -123,9 +129,9 @@ Replacing the rule with a logistic reward model *trained* on data in which the c
 
 ## 5.8 Online detection (Fig. 8)
 
-Spot-auditing the loop, the witnessed-exploit rate becomes an early-warning signal. On the gameable reward the detector fires at iteration $12$ (gap $0.60$), well before the gap saturates at $0.98$; on the verifiable control it never fires. This is the detection half of a training-time immune system whose repair half is Section 5.4.
+Spot-auditing the loop, the witnessed-exploit rate becomes an early-warning signal. On the gameable reward the detector fires at iteration $12$ (gap $0.60$), before the gap saturates at $0.98$; the matched verifiable-control trajectory produces zero alarms. This single negative control establishes the expected behaviour for the committed seed, not a general false-positive rate. This is the detection half of a training-time immune system whose repair half is Section 5.4.
 
-![The online detector fires early on the gameable reward and never on the control.](../figures/fig8_detector.png){width=76%}
+![The online detector fires early on the gameable reward; the matched control raises zero alarms.](../figures/fig8_detector.png){width=76%}
 
 # 6. Toward Scale (M2–M5)
 
@@ -133,11 +139,11 @@ The offline task isolates the mechanism; the scale-up adds a real policy back. `
 
 # 7. Discussion
 
-Reward hacking is an *optimization* phenomenon, and the natural place to instrument it is the loop, not a static snapshot. An oracle-witnessed, causal instrument buys three things a scalar reward curve cannot: it says *when* hacking starts (detection), *which* feature is exploited (localization), and *whether* a fix is a fix (repair versus relocation). Framed together, detection and repair are a training-time immune system — a defensive counterpart to the offensive Wind Tunnel. The breadth result matters for practice: because DPO's implicit reward hacks by the same mechanism, "no explicit reward model" is not a safeguard against reward hacking.
+Reward hacking is an *optimization* phenomenon, and the natural place to instrument it is the loop, not a static snapshot. An oracle-witnessed intervention instrument buys three things a scalar reward curve cannot: it says *when* hacking starts (detection), *which tested feature is implicated under an exact fork* (localization), and *whether* a fix is a fix (repair versus relocation). Framed together, detection and repair are a training-time immune system — a defensive counterpart to the offensive Wind Tunnel. The breadth result matters for practice: in this controlled setting, DPO's implicit reward hacks by the same mechanism, so removing an explicit reward-model training stage is not by itself a safeguard.
 
 # 8. Limitations
 
-The offline task is deliberately minimal: a single-step action model with a synthetic oracle, which isolates the mechanism but does not estimate real-world magnitudes. The DPO analysis uses single-step preferences. The localizer, like the Wind Tunnel's, assumes a candidate variable to fork; discovering the candidate set automatically is future work. The online detector assumes a cheap oracle exists on an audited subset — realistic for verifiable domains (math, code, factual keys) and harder for open-ended generation. The language-model results (M2–M5) are specified and wired but not yet run; they are the intended empirical core of the next revision.
+The offline task is deliberately minimal: a single-step action model with a synthetic oracle, which isolates the mechanism but does not estimate real-world magnitudes. The DPO analysis uses single-step preferences, so the objective-breadth result is not evidence of objective-invariance in general. The localizer assumes a candidate variable to fork and exact intervention fidelity; correlated, latent, or semantically entangled features can violate that assumption. Discovering candidate interventions automatically is future work. The online detector assumes a cheap oracle exists on an audited subset—realistic for verifiable domains (math, code, factual keys) and harder for open-ended generation—and its single matched control does not estimate a false-positive rate. The language-model experiment is implemented but not run; this version makes no empirical claim about neural-policy training, production reward models, or open-ended outputs.
 
 # 9. Broader Impact
 
@@ -145,19 +151,29 @@ The tools here are defensive: they detect, localize, and help repair reward hack
 
 # 10. Conclusion
 
-Carrying an oracle-witnessed causal instrument from static scorers into the RL loop turns reward hacking from a phenomenon we describe after the fact into one we can detect early, localize to a feature, and test the repair of — across PPO, GRPO, and DPO, for rule-based and learned rewards alike. The offline artifact is complete and reproducible; the language-model scale-up plugs into the same pipeline. Pillar 4 makes the training loop, not just the benchmark, an object of verifiable evaluation.
+Carrying an oracle-witnessed intervention instrument from static scorers into the RL loop turns reward hacking from a phenomenon described after the fact into one that can be detected, localized to a tested feature, and followed through repair or relocation. The controlled artifact demonstrates that sequence across its implemented policy-gradient and preference-optimization paths, and across rule-based and learned rewards. The offline result is complete and reproducible; the language-model scale-up is a clearly separated next experiment. Pillar 4 makes the training loop, not just the benchmark, an object of verifiable evaluation.
 
 # Reproducibility Statement
 
-`make test` runs $36$ property/control checks that gate the exploit definition, the control, the localizer, the repair convergence, the detector, and the evidence chain. `make demo` runs the full attack$\to$localize$\to$repair$\to$breadth$\to$detect story and writes a hash-chained, tamper-evident evidence bundle; `gradia-reward-loop verify runs/committed` recomputes it. `make figures` regenerates all eight figures from live runs. The evidence schema is compatible with the Wind Tunnel manifest, so one verifier discipline spans Pillars 1–4.
+`make test` runs $36$ property/control checks that gate the exploit definition, the control, the localizer, repair convergence, the detector, and the evidence chain. `make demo` deterministically reruns the full attack$\to$localize$\to$repair$\to$breadth$\to$detect story. Its core proxy-versus-truth trajectory and localization summary are also committed in a hash-chained, tamper-evident bundle; `python -m gradia_reward_loop.cli verify runs/committed` verifies that stored chain. `make figures` reruns the experiment code and regenerates all eight figures. Thus the figures are reproducible from pinned code and seeds, while the committed chain presently seals the core demo trajectory and localization result rather than every intermediate statistic. The evidence schema is compatible with the Wind Tunnel manifest, so one verifier discipline spans Pillars 1–4.
 
 # References
 
 Amodei, D., Olah, C., Steinhardt, J., Christiano, P., Schulman, J., Mané, D. (2016). *Concrete Problems in AI Safety.* arXiv:1606.06565.
 
+Beigi, M., Jin, M., Zhang, J., Wang, Q., Huang, L. (2026). *Adversarial Reward Auditing for Active Detection and Mitigation of Reward Hacking.* arXiv:2602.01750.
+
+Chen, L., Zhu, C., Chen, J., et al. (2024). *ODIN: Disentangled Reward Mitigates Hacking in RLHF.* ICML.
+
 Christiano, P., Leike, J., Brown, T., Martic, M., Legg, S., Amodei, D. (2017). *Deep Reinforcement Learning from Human Preferences.* NeurIPS.
 
+Coste, T., Anwar, U., Kirk, R., Krueger, D. (2023). *Reward Model Ensembles Help Mitigate Overoptimization.* arXiv:2310.02743.
+
+Denison, C., MacDiarmid, M., Barez, F., et al. (2024). *Sycophancy to Subterfuge: Investigating Reward-Tampering in Large Language Models.* arXiv:2406.10162.
+
 Everitt, T., Krakovna, V., Orseau, L., Hutter, M., Legg, S. (2017). *Reinforcement Learning with a Corrupted Reward Channel.* IJCAI.
+
+Farquhar, S., Varma, V., Lindner, D., et al. (2025). *MONA: Myopic Optimization with Non-myopic Approval Can Mitigate Multi-step Reward Hacking.* ICML.
 
 Gao, L., Schulman, J., Hilton, J. (2022). *Scaling Laws for Reward Model Overoptimization.* arXiv:2210.10760.
 
@@ -170,6 +186,12 @@ Ouyang, L., Wu, J., Jiang, X., et al. (2022). *Training language models to follo
 Pan, A., Bhatia, K., Steinhardt, J. (2022). *The Effects of Reward Misspecification: Mapping and Mitigating Misaligned Models.* ICLR.
 
 Rafailov, R., Sharma, A., Mitchell, E., Ermon, S., Manning, C., Finn, C. (2023). *Direct Preference Optimization: Your Language Model is Secretly a Reward Model.* NeurIPS.
+
+Rame, A., Vieillard, N., Hussenot, L., et al. (2024). *WARM: On the Benefits of Weight Averaged Reward Models.* ICML.
+
+Reber, D., Richardson, S. M., Nief, T., Garbacea, C., Veitch, V. (2025). *RATE: Causal Explainability of Reward Models with Imperfect Counterfactuals.* ICML.
+
+Reddy, S., Dragan, A., Levine, S., Legg, S., Leike, J. (2020). *Learning Human Objectives by Evaluating Hypothetical Behavior.* ICML.
 
 Schulman, J., Moritz, P., Levine, S., Jordan, M., Abbeel, P. (2016). *High-Dimensional Continuous Control Using Generalized Advantage Estimation.* ICLR.
 

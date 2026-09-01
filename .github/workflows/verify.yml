@@ -1,0 +1,28 @@
+name: verify
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-instrument:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install package and development gates
+        run: python -m pip install -e '.[dev]'
+      - name: Run property and control suite
+        run: make test
+      - name: Run lint gate
+        run: make lint
+      - name: Run type gate
+        run: make typecheck
+      - name: Verify committed evidence bundle
+        run: make verify

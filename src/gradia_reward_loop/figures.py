@@ -137,7 +137,7 @@ def fig_objectives(seed=1):
     dpo = [dpo_ep(ver), dpo_ep(gam)]
     x = np.arange(2); w = 0.36
     fig, ax = plt.subplots(figsize=(5.8, 3.6))
-    ax.bar(x - w/2, rl, w, label="RL loop (PPO/GRPO-style)", color=BLUE)
+    ax.bar(x - w/2, rl, w, label="policy-gradient loop", color=BLUE)
     ax.bar(x + w/2, dpo, w, label="DPO (implicit reward)", color=AMBER)
     ax.set_xticks(x); ax.set_xticklabels(["verifiable reward\n(control)", "gameable reward"])
     ax.set_ylabel("learned P(exploit action)"); ax.set_ylim(0, 1.05)
@@ -190,7 +190,7 @@ def fig_learned_rm(seed=0):
 
 def fig_detector(seed=1):
     """Online detector: audited witnessed-exploit rate over training, with the detection point;
-    fires early on the gameable reward, never on the verifiable control."""
+    fires early on the gameable reward and raises zero alarms in the matched control run."""
     from .detector import monitor_training
     fig, ax = plt.subplots(figsize=(6.6, 3.8))
     for ch, color in [(VerifiableReward(), BLUE), (GameableReward(), RED)]:
@@ -205,7 +205,7 @@ def fig_detector(seed=1):
     ax.axhline(0.45, color=MUTED, ls="--", lw=1, label="alarm threshold")
     ax.set_xlabel("RL iteration"); ax.set_ylabel("audited witnessed-exploit rate")
     ax.set_ylim(-0.03, 1.05)
-    ax.set_title("Online detector flags reward hacking early (no false positive on control)")
+    ax.set_title("Online detector flags hacking early (zero alarms in matched control)")
     ax.legend(frameon=False, fontsize=8, loc="center right")
     return _save(fig, "fig8_detector.png")
 

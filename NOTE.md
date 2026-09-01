@@ -1,8 +1,9 @@
 # Reward Hacking in the RL Loop
 ### Pillar 4 of the Gradia program — a training-time extension of the Reward-Hacking Wind Tunnel
 
-**Rudy Celekli · Gradia Research.** Status: offline milestones M0–M1 complete and reproducible;
-LLM milestones M2–M5 specified. All numbers below recompute from `make demo` / `make test`.
+**Rudy Celekli · Gradia Research.** Status: offline instrument and methods paper complete and
+reproducible; the LLM-scale experiment is implemented but not yet run. All numbers below
+recompute from `make demo` / `make test`.
 
 ## Abstract
 
@@ -19,10 +20,11 @@ going negative (−0.84). **(Control C)** The same optimizer against an oracle-*
 witnessed single-variable fork on the reward channel recovers the exploited feature with lift
 +1.00 over baseline (n = 64 witnessed exploits). **(H3, repair)** Patching the localized cue and
 continuing *relocates* the exploit across cues (whack-a-mole) before a comprehensive patch cures
-it (γ_local = 0.67). Finally, the phenomenon is **objective-agnostic**: a from-scratch PPO, an RL
-policy-gradient loop, and DPO's *implicit* reward all hack a gameable reward and none hack a
-verifiable one. We then specify the real-scale program: GRPO on a small language model over
-GSM8K, verifiable (RLVR) vs. gameable reward.
+it (γ_local = 0.67). Finally, the mechanism shows **objective breadth in this controlled setting**:
+the policy-gradient loop and DPO's *implicit* reward both hack a gameable reward and remain
+low-exploit under the verifiable control; a separate from-scratch PPO experiment validates the
+optimization machinery. We then specify the real-scale program: GRPO on a small language model
+over GSM8K, verifiable (RLVR) vs. gameable reward.
 
 ## 1. Where this sits
 
@@ -76,7 +78,7 @@ observed in the training loop.
 
 ![Repair whack-a-mole](figures/fig4_repair_whackamole.png)
 
-**3.5 The phenomenon is objective-agnostic (Fig. 5).** The RL policy-gradient loop and DPO's
+**3.5 The mechanism spans the implemented objectives (Fig. 5).** The RL policy-gradient loop and DPO's
 *implicit* reward both learn to exploit a gameable reward (P(exploit) 0.98 and 0.66 respectively)
 and both stay near zero under a verifiable reward. DPO never trains an explicit reward model, yet
 gameable *preferences* teach its implicit reward the same exploit — so this is a property of
@@ -105,8 +107,9 @@ correlation -- closing the "it is only a hardcoded rule" objection.
 **3.8 An online detector flags hacking early (Fig. 8).** The Wind Tunnel witnesses exploits by
 spot-auditing with an oracle; run that audit each training window and the witnessed-exploit rate
 becomes an early-warning signal. On the gameable reward the detector fires at iteration 12
-(gap 0.60), well before the gap saturates at 0.98; on the verifiable control it never fires. This
-is the detection half of a training-time immune system whose repair half is Section 3.4.
+(gap 0.60), before the gap saturates at 0.98; the matched verifiable-control run produces zero
+alarms. This is a negative control for the committed seed, not an estimated false-positive rate;
+it is the detection half of a training-time immune system whose repair half is Section 3.4.
 
 ![Online detector](figures/fig8_detector.png)
 

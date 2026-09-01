@@ -8,11 +8,20 @@ records the divergence at every step.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Callable, Protocol
 
 import numpy as np
 
-from .monitor import GoodhartMonitor
-from .rewards import ProxyTask, RewardChannel, oracle
+from .monitor import GoodhartMonitor, RewardHackingReport
+from .rewards import Answer, RewardChannel, oracle
+
+
+class PolicyTask(Protocol):
+    """Minimal task surface consumed by the policy loop."""
+
+    n_actions: int
+
+    def realise(self, action: int) -> Answer: ...
 
 
 def _softmax(z):
@@ -23,19 +32,26 @@ def _softmax(z):
 
 @dataclass
 class LoopResult:
-    report: object
+    report: RewardHackingReport
     theta: np.ndarray
     action_probs: np.ndarray
-    witnessed_exploits: list = field(default_factory=list)  # (Answer) proxy-PASS & oracle-FAIL
+    witnessed_exploits: list[Answer] = field(default_factory=list)
 
 
-def train_policy(channel: RewardChannel, task: ProxyTask, iters: int = 200,
-                 batch: int = 64, lr: float = 0.3, seed: int = 0, callback=None) -> LoopResult:
+def train_policy(
+    channel: RewardChannel,
+    task: PolicyTask,
+    iters: int = 200,
+    batch: int = 64,
+    lr: float = 0.3,
+    seed: int = 0,
+    callback: Callable[[int, np.ndarray], object] | None = None,
+) -> LoopResult:
     rng = np.random.default_rng(seed)
     theta = np.zeros(task.n_actions)
     baseline = 0.0
     mon = GoodhartMonitor(channel.name)
-    exploits: list = []
+    exploits: list[Answer] = []
     for _it in range(iters):
         p = _softmax(theta)
         if callback is not None:
