@@ -110,6 +110,23 @@ def main() -> int:
     a2 = train_policy(gam, ProxyTask(seed=7), iters=100, seed=7).action_probs
     check("training is deterministic under a fixed seed", bool(np.allclose(a1, a2)))
 
+    # --- repair: whack-a-mole then cure ---
+    from .repair import run_repair
+    rep = run_repair(seed=0)
+    check("repair relocates the exploit across cues (whack-a-mole)", rep.relocations >= 1)
+    check("repair localizes and patches each round (>=2 patches)", rep.patches >= 2)
+    check("repair converges to a cure (final gap ~ 0)", rep.cured)
+    check("gamma_local reflects relocation before cure (>0)", rep.gamma_local > 0.0)
+
+    # --- DPO breadth: the implicit reward is gameable too ---
+    from .dpo import train_dpo
+    dver = train_dpo(VerifiableReward(), ProxyTask(p_solve=0.5, seed=1), seed=1)
+    dgam = train_dpo(GameableReward(), ProxyTask(p_solve=0.5, seed=1), seed=1)
+    check("DPO under a verifiable annotator stays low-exploit", dver.exploit_rate < 0.3)
+    check("DPO under a gameable annotator hacks the implicit reward", dgam.exploit_rate > 0.4)
+    check("DPO gameable exploit rate exceeds verifiable (implicit reward is gameable)",
+          dgam.exploit_rate > dver.exploit_rate + 0.2)
+
     npass = sum(_checks); n = len(_checks)
     print(f"\n{npass} passed, {n - npass} failed")
     return 0 if npass == n else 1

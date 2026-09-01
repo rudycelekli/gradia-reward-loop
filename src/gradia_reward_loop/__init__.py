@@ -19,10 +19,14 @@ from .rewards import (
 )
 from .monitor import GoodhartMonitor, RewardHackingReport
 from .loop import LoopResult, train_policy
+from .repair import MultiCueReward, MultiCueTask, RepairReport, run_repair
+from .dpo import DPOResult, train_dpo
 
 __all__ = [
     "AVAILABLE", "favored_phrases", "provenance", "GridWorld", "PPO", "eval_return",
     "train_ppo", "ACTIONS", "Answer", "GameableReward", "ProxyTask", "RewardChannel",
     "VerifiableReward", "oracle", "GoodhartMonitor", "RewardHackingReport",
     "LoopResult", "train_policy",
+    "MultiCueReward", "MultiCueTask", "RepairReport", "run_repair",
+    "DPOResult", "train_dpo",
 ]

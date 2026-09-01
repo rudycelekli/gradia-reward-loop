@@ -30,6 +30,7 @@ class Answer:
     text: str
     correct: bool          # oracle ground truth (true quality)
     has_phrase: bool       # wears a judge-favoured phrase
+    cues: tuple = ()       # named judge cues the answer wears (for the multi-cue repair loop)
 
 
 def oracle(ans: Answer) -> bool:

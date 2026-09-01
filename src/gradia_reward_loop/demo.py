@@ -67,6 +67,21 @@ def run(iters: int = 250, seed: int = 1, write: bool = True):
         print(f"\n[4] evidence bundle -> runs/{OUT.name}/  frames={man['n_frames']}  "
               f"verify_ok={v['ok']}  chain_head={man['frames_chain_head'][:16]}...")
 
+    from .repair import run_repair
+    rp = run_repair(seed=seed)
+    print("\n[5] repair loop -- patch the localized cue, retrain, measure cure vs relocation:")
+    for r in rp.rounds:
+        print(f"    round {r.rnd}: gap={r.gap:+.2f}  exploited={r.dominant_cue}  patched={r.localized}")
+    print(f"    -> patches={rp.patches} relocations={rp.relocations} "
+          f"gamma_local={rp.gamma_local:.2f} cured={rp.cured}   (whack-a-mole, then cure)")
+
+    from .dpo import train_dpo
+    print("\n[6] DPO breadth -- is the *implicit* reward gameable too?")
+    for ann in (VerifiableReward(), GameableReward()):
+        dr = train_dpo(ann, ProxyTask(p_solve=0.5, seed=seed), seed=seed)
+        print(f"    {ann.name:11s} DPO: true_acc={dr.true_acc:.2f}  exploit_rate={dr.exploit_rate:.2f}")
+    print("    -> DPO hacks under a gameable annotator, tracks truth under a verifiable one.")
+
     print("\nInterpretation: the verifiable-reward control tracks truth; the gameable reward")
     print("decouples (Goodhart) and the loop learns the exploit, which the witnessed fork")
     print("localizes to the favoured phrase -- the Wind Tunnel thesis, now in the training loop.")

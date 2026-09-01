@@ -62,39 +62,61 @@ class GRPOTrainer:
                 "GRPO training needs the real backend: pip install -e '.[real,gradia]' and a GPU. "
                 "The offline demo (make demo) needs none of this.") from e
 
-    def train(self, monitor=None, evidence_dir=None):  # pragma: no cover - needs a GPU
-        """Reference loop -- validate on a GPU before trusting the numbers (Milestone M2)."""
+    def train(self, monitor=None):  # pragma: no cover - needs a GPU
+        """Reference GRPO loop: per-token PPO-clip surrogate + KL to a frozen reference, with
+        GRPO group-relative advantages. Structurally complete; validate on a GPU before trusting
+        the numbers (Milestone M2). Import-clean without torch so the package always loads."""
         self._require_backend()
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
         tok = AutoTokenizer.from_pretrained(self.cfg.model)
+        if tok.pad_token is None:
+            tok.pad_token = tok.eos_token
         policy = AutoModelForCausalLM.from_pretrained(self.cfg.model)
         ref = AutoModelForCausalLM.from_pretrained(self.cfg.model)
+        ref.eval()
         for p in ref.parameters():
             p.requires_grad_(False)
         opt = torch.optim.Adam(policy.parameters(), lr=self.cfg.lr)
         rng = np.random.default_rng(self.cfg.seed)
+        G = self.cfg.group_size
+
+        def seq_logprob(model, ids, attn, prompt_len):
+            out = model(input_ids=ids, attention_mask=attn)
+            logp = torch.log_softmax(out.logits[:, :-1, :], dim=-1)
+            tokens = ids[:, 1:]
+            gathered = logp.gather(-1, tokens.unsqueeze(-1)).squeeze(-1)
+            mask = attn[:, 1:].float().clone()
+            mask[:, : prompt_len - 1] = 0.0          # score only the completion tokens
+            return (gathered * mask).sum(dim=1)
 
         for step in range(self.cfg.steps):
             prompt = self.prompts[int(rng.integers(len(self.prompts)))]
             enc = tok(prompt, return_tensors="pt")
-            gen = policy.generate(**enc, do_sample=True, num_return_sequences=self.cfg.group_size,
-                                  max_new_tokens=self.cfg.max_new_tokens)
-            comps = [tok.decode(g[enc["input_ids"].shape[1]:], skip_special_tokens=True) for g in gen]
+            plen = enc["input_ids"].shape[1]
+            with torch.no_grad():
+                gen = policy.generate(**enc, do_sample=True, top_p=0.95, temperature=1.0,
+                                      num_return_sequences=G, max_new_tokens=self.cfg.max_new_tokens,
+                                      pad_token_id=tok.pad_token_id)
+            attn = (gen != tok.pad_token_id).long()
+            comps = [tok.decode(g[plen:], skip_special_tokens=True) for g in gen]
             answers = [self.judge_fn(prompt, c) for c in comps]
-            rewards = np.array([self.reward.reward(a) for a in answers])
-            adv = torch.tensor(group_relative_advantages(rewards, self.cfg.group_size),
-                               dtype=torch.float32)
+            rewards = np.array([self.reward.reward(a) for a in answers], dtype=float)
+            adv = torch.tensor(group_relative_advantages(rewards, G), dtype=torch.float32)
 
-            # TODO(M2): per-token logprobs under policy and ref for each completion; then
-            #   ratio   = exp(logp_policy - logp_policy_old)          (PPO-clip on tokens)
-            #   surr    = min(ratio*adv, clip(ratio,1-e,1+e)*adv)
-            #   kl      = logp_policy - logp_ref
-            #   loss    = -(surr - kl_coef*kl).mean()
-            # opt.zero_grad(); loss.backward(); opt.step()
+            with torch.no_grad():
+                logp_old = seq_logprob(policy, gen, attn, plen)
+                logp_ref = seq_logprob(ref, gen, attn, plen)
+            logp_new = seq_logprob(policy, gen, attn, plen)     # with grad
+            ratio = torch.exp(logp_new - logp_old)
+            surr = torch.min(ratio * adv,
+                             torch.clamp(ratio, 1 - self.cfg.clip, 1 + self.cfg.clip) * adv)
+            kl = logp_new - logp_ref
+            loss = -(surr - self.cfg.kl_coef * kl).mean()
+            opt.zero_grad(); loss.backward(); opt.step()
+
             if monitor is not None:
                 true = np.array([1.0 if a.correct else 0.0 for a in answers])
-                monitor.record(rewards.mean(), true.mean())
-        raise NotImplementedError(
-            "M2: fill in the token-level PPO-clip+KL loss above, then this loop trains for real.")
+                monitor.record(float(rewards.mean()), float(true.mean()))
+        return policy, tok

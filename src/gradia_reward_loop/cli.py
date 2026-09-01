@@ -13,6 +13,7 @@ def main(argv=None) -> int:
     sub.add_parser("demo", help="offline reward-hacking demonstration (no GPU)")
     sub.add_parser("ppo-toy", help="train the from-scratch PPO on the toy MDP")
     sub.add_parser("provenance", help="show what Gradia primitives are wired")
+    sub.add_parser("figures", help="(re)generate the publication figures")
     vp = sub.add_parser("verify", help="verify an evidence bundle directory")
     vp.add_argument("bundle_dir")
     tp = sub.add_parser("train", help="real GRPO on a small LLM (needs .[real] + GPU)")
@@ -32,6 +33,9 @@ def main(argv=None) -> int:
             print(f"  iter {i:3d}: {hist[i]:+.3f}")
         print(f"  final  : {hist[-1]:+.3f}  (optimal "
               f"{-env.step_cost*env.optimal_steps()+env.goal_reward:+.3f})")
+    elif args.cmd == "figures":
+        from .figures import build_all
+        build_all()
     elif args.cmd == "provenance":
         from ._gradia import provenance
         print(json.dumps(provenance(), indent=2))

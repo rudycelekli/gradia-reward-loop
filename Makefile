@@ -2,7 +2,7 @@ PY ?= python3
 # make the sibling Wind Tunnel importable without installing (Pillar 1-3 primitives)
 export PYTHONPATH := src:../gradia-wind-tunnel/src
 
-.PHONY: help test demo ppo-toy train lint typecheck
+.PHONY: help test demo ppo-toy train figures lint typecheck
 help:
 	@echo "make test      - property/control suite (no GPU, no network)"
 	@echo "make demo      - offline reward-hacking demonstration (no GPU):"
@@ -19,6 +19,9 @@ ppo-toy:
 	$(PY) -m gradia_reward_loop.cli ppo-toy
 train:
 	$(PY) -m gradia_reward_loop.cli train $(ARGS)
+figures:
+	$(PY) -m gradia_reward_loop.figures
+
 lint:
 	ruff check src
 typecheck:

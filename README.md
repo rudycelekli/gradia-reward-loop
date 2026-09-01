@@ -48,7 +48,7 @@ make train                        # GRPO on a small model (needs a GPU)
 | `evidence.py` | hash-chained, tamper-evident run bundles (Wind-Tunnel-compatible schema) |
 | `demo.py` · `cli.py` · `tests.py` | orchestration, CLI, and the property/control suite |
 
-See **[PROGRAM.md](PROGRAM.md)** for the thesis, the four hypotheses, the mathematics this
+See **[NOTE.md](NOTE.md)** for the write-up (abstract, results, figures) and **[PROGRAM.md](PROGRAM.md)** for the thesis, the four hypotheses, the mathematics this
 program demonstrates (PPO/GAE, GRPO, DPO, reward over-optimization), and the M0–M5 milestone plan.
 
 *Part of the Gradia program by Rudy Celekli. Apache-2.0.*
