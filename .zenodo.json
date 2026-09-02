@@ -1,0 +1,25 @@
+{
+  "title": "Reward Hacking in the RL Loop: Oracle-Witnessed Localization and Repair of Reward-Model Exploits During Training",
+  "upload_type": "software",
+  "description": "A replay-verified research artifact for measuring reward-channel exploitation during reinforcement learning. The frozen v1 study contains matched 300-step GRPO/LoRA arms on Qwen2.5-0.5B-Instruct and GSM8K. The RLVR control has proxy-oracle gap 0; the deliberately gameable arm has 58/64 proxy successes versus 1/64 oracle successes (gap 0.890625). This is one-seed reward-hacking and amplification evidence, not a population estimate, frontier-model result, production-reward result, or capability-improvement claim. The archive includes exact manifests, hash-chained frame ledgers, final adapters, model-backed replay receipts, analysis, figures, paper, and executable controls.",
+  "creators": [
+    {
+      "name": "Celekli, Rudy M.",
+      "affiliation": "Gradia Research",
+      "orcid": "0009-0000-7043-3766"
+    }
+  ],
+  "access_right": "open",
+  "license": "Apache-2.0",
+  "version": "1.0.2",
+  "publication_date": "2026-09-02",
+  "language": "eng",
+  "keywords": [
+    "reward hacking",
+    "reinforcement learning",
+    "GRPO",
+    "RLVR",
+    "causal evaluation",
+    "reproducibility"
+  ]
+}

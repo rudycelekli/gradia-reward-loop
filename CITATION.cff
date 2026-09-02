@@ -2,8 +2,8 @@ cff-version: 1.2.0
 message: "If you use this research artifact, please cite the paper below."
 title: "gradia-reward-loop"
 type: software
-version: 1.0.1
-date-released: 2026-09-01
+version: 1.0.2
+date-released: 2026-09-02
 license: Apache-2.0
 repository-code: "https://github.com/rudycelekli/gradia-reward-loop"
 keywords:
@@ -26,5 +26,5 @@ preferred-citation:
     name: Gradia Research
   year: 2026
   month: 9
-  version: 1.0.1
+  version: 1.0.2
   license: Apache-2.0

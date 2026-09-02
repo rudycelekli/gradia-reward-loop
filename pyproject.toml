@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradia-reward-loop"
-version = "1.0.1"
+version = "1.0.2"
 description = "Oracle-witnessed reward-hacking experiments and a replay-verified paired GRPO diagnostic."
 readme = "README.md"
 requires-python = ">=3.10"
