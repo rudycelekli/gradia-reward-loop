@@ -1,7 +1,7 @@
 # gradia-reward-loop
 
 **Pillar 4 of the Gradia program — reward hacking in the RL loop.** A training-time extension
-of the [Reward-Hacking Wind Tunnel](../gradia-wind-tunnel): the same oracle-witnessed exploit
+of the [Reward-Hacking Wind Tunnel](https://github.com/rudycelekli/gradia-wind-tunnel): the same oracle-witnessed exploit
 definition (`reward-PASS ∧ oracle-WRONG`), the same witnessed single-variable localization, and
 the same hash-chained evidence bundles — now on the reward signal of a live RL loop.
 
@@ -20,7 +20,7 @@ explicit fidelity assumptions.
   exploit a specified proxy; oracle-witnessed counterfactual intervention localizes the exploited
   feature; an online detector fires on the gameable channel and raises zero alarms in the one
   matched control run.
-- **Reproducible here:** fixed-seed experiments, 36 property/control checks, regenerated figures,
+- **Reproducible here:** fixed-seed experiments, 54 property/control checks, regenerated figures,
   and a tamper-evident core trajectory whose manifest and frame chain verify offline.
 - **Not yet claimed:** universal reward-hacking detection, a false-positive-rate estimate,
   production-scale LLM training evidence, or causal discovery without a candidate intervention
@@ -31,7 +31,7 @@ explicit fidelity assumptions.
 ```bash
 make demo      # end-to-end: PPO learns a toy MDP; a gameable reward gets hacked while a
                # verifiable-reward control does not; the exploit is localized; evidence verified
-make test      # 36 property/control checks (gates the science, not just the plumbing)
+make test      # 54 property/control checks (gates the science, not just the plumbing)
 make ppo-toy   # the from-scratch PPO learning curve
 make lint      # static lint gate
 make typecheck # strict type gate over the package
@@ -52,7 +52,7 @@ The demo prints, among other things:
 
 ```bash
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python -e ../gradia-wind-tunnel -e '.[real,dev]'
+uv pip install --python .venv/bin/python -e '.[real,dev,gradia]'
 .venv/bin/python scripts/train_grpo.py --channel verifiable --steps 300 --seed 20260901 \
   --max-new-tokens 128 --eval-batch-size 2 --generation-batch-size 2 --train-batch-size 1
 .venv/bin/python scripts/train_grpo.py --channel gameable --steps 300 --seed 20260901 \
@@ -78,7 +78,7 @@ completions, and seals each checkpoint and trajectory. `verify-pair` refuses mis
 | `overopt.py` | optimization-pressure vs reward-hacking frontier (with bootstrap CIs, `stats.py`) |
 | `reward_model.py` | a *learned* logistic reward model hacked through a spurious feature (dose-response) |
 | `detector.py` | online hacking detector -- spot-audits the loop, flags hacking early (immune system) |
-| `demo.py` · `cli.py` · `tests.py` | orchestration, CLI, and the 40-check property/control suite |
+| `demo.py` · `cli.py` · `tests.py` | orchestration, CLI, and the 54-check property/control suite |
 
 See **[NOTE.md](NOTE.md)** for the write-up (abstract, results, figures) and **[PROGRAM.md](PROGRAM.md)** for the thesis, the four hypotheses, the mathematics this
 program demonstrates (PPO/GAE, GRPO, DPO, reward over-optimization), and the M0–M5 milestone plan.
