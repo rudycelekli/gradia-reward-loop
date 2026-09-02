@@ -2,7 +2,7 @@ PY ?= python3
 # make the sibling Wind Tunnel importable without installing (Pillar 1-3 primitives)
 export PYTHONPATH := src:../gradia-wind-tunnel/src
 
-.PHONY: help test demo ppo-toy train figures lint typecheck verify
+.PHONY: help test demo ppo-toy train figures lint typecheck verify verify-real analyze-real
 help:
 	@echo "make test      - property/control suite (no GPU, no network)"
 	@echo "make demo      - offline reward-hacking demonstration (no GPU):"
@@ -12,6 +12,8 @@ help:
 	@echo "make lint      - ruff check src"
 	@echo "make typecheck - strict package type gate"
 	@echo "make verify    - verify the committed evidence manifest and frame chain"
+	@echo "make verify-real - verify the frozen paired-GRPO evidence and decision rule"
+	@echo "make analyze-real - rebuild the paired-GRPO JSON summary and Figure 9"
 
 test:
 	$(PY) -m gradia_reward_loop.tests
@@ -30,3 +32,9 @@ typecheck:
 	MYPYPATH=src:../gradia-wind-tunnel/src mypy --explicit-package-bases src/gradia_reward_loop
 verify:
 	$(PY) -m gradia_reward_loop.cli verify runs/committed
+
+PAIR_DIR ?= runs/m2/Qwen2.5-0.5B-Instruct-s20260901-99d688fed184
+verify-real:
+	$(PY) -m gradia_reward_loop.cli verify-pair $(PAIR_DIR)
+analyze-real:
+	$(PY) scripts/analyze_pair.py $(PAIR_DIR)

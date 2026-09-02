@@ -255,6 +255,13 @@ def main() -> int:
         "M2 verifier enforces the frozen semantic contract and returns H1 support",
         m2_result["ok"] and m2_result["decision"]["outcome"] == "supported",
     )
+    from .real_results import analyze_pair
+    m2_analysis = analyze_pair(m2_root)
+    check(
+        "M2 analysis reconstructs counts and seals a self-digest after verification",
+        m2_analysis["arms"]["gameable"]["final"]["exploit_passes"] == 8
+        and len(m2_analysis["analysis_sha256"]) == 64,
+    )
     m2_null = pathlib.Path(tempfile.mkdtemp())
     _write_m2_pair(m2_null, gameable_final_gap=0.078125)
     null_result = verify_pair(m2_null)
