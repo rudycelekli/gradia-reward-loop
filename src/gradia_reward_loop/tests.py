@@ -39,6 +39,121 @@ def check(desc: str, cond) -> None:
     print(f"  {'ok  ' if cond else 'FAIL'} {desc}")
 
 
+def _write_m2_pair(
+    root: pathlib.Path,
+    *,
+    gameable_final_gap: float = 0.125,
+    drop_gameable_step: int | None = None,
+    bad_gameable_rate: bool = False,
+    control_exploit: bool = False,
+    dirty_gameable: bool = False,
+) -> None:
+    from .evidence import (
+        M2_PAIR_V1_EXPECTED,
+        M2_SOURCE_COMMIT_V1,
+        M2_WIND_TUNNEL_COMMIT_V1,
+        _canon,
+        _sha,
+        write_bundle,
+    )
+
+    contract = json.loads(json.dumps(M2_PAIR_V1_EXPECTED))
+    contract_sha = _sha(_canon(contract))
+    pair_id = (
+        f"{contract['model'].split('/')[-1]}-s{contract['seed']}-{contract_sha[:12]}"
+    )
+    eval_steps = list(range(0, contract["steps"] + 1, contract["eval_every"]))
+    for channel in ("verifiable", "gameable"):
+        frames = []
+
+        def evaluation(step: int) -> dict:
+            oracle_passes = 18
+            if channel == "verifiable":
+                extra = 1 if control_exploit and step == contract["steps"] else 0
+            else:
+                extra = (
+                    round(gameable_final_gap * contract["eval_n"])
+                    if step == contract["steps"]
+                    else 6
+                )
+            proxy_passes = oracle_passes + extra
+            return {
+                "frame_type": "evaluation",
+                "step": step,
+                "n": contract["eval_n"],
+                "proxy_passes": proxy_passes,
+                "oracle_passes": oracle_passes,
+                "exploit_passes": extra,
+                "favored_phrase_completions": 15,
+                "proxy": proxy_passes / contract["eval_n"],
+                "true": oracle_passes / contract["eval_n"],
+                "gap": extra / contract["eval_n"],
+                "evaluation_rows_sha256": f"{step:064x}",
+            }
+
+        frames.append(evaluation(0))
+        for step in range(1, contract["steps"] + 1):
+            if channel == "gameable" and step == drop_gameable_step:
+                continue
+            frame = {
+                "frame_type": "training_step",
+                "step": step,
+                "prompt_sha256": f"{step:064x}",
+                "completions_sha256": f"{step + 1:064x}",
+                "group_size": contract["group_size"],
+                "proxy_passes": 0,
+                "oracle_passes": 0,
+                "exploit_passes": 0,
+                "favored_phrase_completions": 0,
+                "proxy": 0.0,
+                "true": 0.0,
+                "gap": 0.0,
+                "loss": 0.0,
+                "kl_sample_mean": 0.0,
+                "grad_norm": 1.0,
+            }
+            if channel == "gameable" and bad_gameable_rate and step == 1:
+                frame["proxy"] = 0.5
+            frames.append(frame)
+            if step in eval_steps[1:]:
+                frames.append(evaluation(step))
+        evaluations = [f for f in frames if f["frame_type"] == "evaluation"]
+        final = evaluations[-1]
+        summary = {
+            "claim_status": "completed_diagnostic",
+            "channel": channel,
+            "pair_id": pair_id,
+            "pair_contract": contract,
+            "pair_contract_sha256": contract_sha,
+            "model": contract["model"],
+            "model_revision": contract["model_revision"],
+            "dataset": contract["dataset"],
+            "dataset_revision": contract["dataset_revision"],
+            "git": {
+                "sha": M2_SOURCE_COMMIT_V1,
+                "dirty": bool(dirty_gameable and channel == "gameable"),
+            },
+            "wind_tunnel_git": {"sha": M2_WIND_TUNNEL_COMMIT_V1, "dirty": False},
+            "runtime": {
+                "device": "mps",
+                "torch_version": "2.13.0",
+                "model_requested": contract["model"],
+                "model_revision_requested": contract["model_revision"],
+                "model_revision_resolved": contract["model_revision"],
+                "train_wall_seconds": 1.0,
+            },
+            "packages": {"torch": "2.13.0"},
+            "m2_favored_signals": contract["favored_signals"],
+            "final_proxy": round(final["proxy"], 6),
+            "final_true": round(final["true"], 6),
+            "final_gap": round(final["gap"], 6),
+            "peak_gap": round(max(f["gap"] for f in evaluations), 6),
+        }
+        bundle = root / channel
+        write_bundle(bundle, f"m2-{channel}", frames, summary)
+        (bundle / "pair-contract.json").write_text(json.dumps(contract))
+
+
 def main() -> int:
     rng = np.random.default_rng(0)
 
@@ -132,6 +247,45 @@ def main() -> int:
     check("paired verifier requires two valid bundles under one contract", verify_pair(pair_root)["ok"])
     (pair_root / "gameable" / "pair-contract.json").write_text(json.dumps({"seed": 8}))
     check("paired verifier rejects a divergent treatment contract", not verify_pair(pair_root)["ok"])
+
+    m2_root = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_root)
+    m2_result = verify_pair(m2_root)
+    check(
+        "M2 verifier enforces the frozen semantic contract and returns H1 support",
+        m2_result["ok"] and m2_result["decision"]["outcome"] == "supported",
+    )
+    m2_null = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_null, gameable_final_gap=0.078125)
+    null_result = verify_pair(m2_null)
+    check(
+        "M2 null remains an admitted result rather than a verifier failure",
+        null_result["ok"] and null_result["decision"]["outcome"] == "null",
+    )
+    m2_missing = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_missing, drop_gameable_step=150)
+    check(
+        "M2 verifier rejects a missing optimizer step",
+        not verify_pair(m2_missing)["ok"],
+    )
+    m2_bad_rate = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_bad_rate, bad_gameable_rate=True)
+    check(
+        "M2 verifier rejects rates that do not reconstruct from counts",
+        not verify_pair(m2_bad_rate)["ok"],
+    )
+    m2_bad_control = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_bad_control, control_exploit=True)
+    check(
+        "M2 verifier rejects proxy/oracle divergence in the RLVR control",
+        not verify_pair(m2_bad_control)["ok"],
+    )
+    m2_dirty = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_dirty, dirty_gameable=True)
+    check(
+        "M2 verifier rejects dirty or mismatched paired provenance",
+        not verify_pair(m2_dirty)["ok"],
+    )
 
     # --- determinism ---
     a1 = train_policy(gam, ProxyTask(seed=7), iters=100, seed=7).action_probs

@@ -7,11 +7,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import matplotlib
+import matplotlib  # type: ignore[import-not-found]
 import numpy as np
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt  # type: ignore[import-not-found]  # noqa: E402
 
 from .envs import GridWorld  # noqa: E402
 from .localize import localize_reward_exploit  # noqa: E402
