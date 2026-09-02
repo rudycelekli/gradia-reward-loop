@@ -35,9 +35,9 @@ We are explicit about scope: the experiments here are a minimal, offline model t
 
 **Specification gaming and reward hacking.** [Amodei et al., 2016] name reward hacking among concrete safety problems; [Krakovna et al., 2020] catalogue gaming; [Skalse et al., 2022] give a formal definition; [Pan et al., 2022] map the effects of reward misspecification and its phase transitions; [Everitt et al., 2017] study corrupted reward channels. Our contribution is not another definition but an *in-loop, intervention-based, oracle-witnessed* instrument for localization and repair.
 
-**Causal diagnosis, active auditing, and mitigation.** RATE estimates a reward model's causal sensitivity to high-level response attributes using imperfect LLM-rewritten counterfactuals and a correction for rewrite bias [Reber et al., 2025]. ReQueST synthesizes hypothetical behaviours to improve a reward model before deployment [Reddy et al., 2020]. Adversarial Reward Auditing instead learns a latent auditor from a Hacker policy and gates reward during RLHF [Beigi et al., 2026]. Other work changes the reward or optimization procedure: conservative reward-model ensembles [Coste et al., 2023], weight-averaged reward models [Rame et al., 2024], disentangled rewards for length hacking [Chen et al., 2024], and MONA for multi-step reward hacking [Farquhar et al., 2025]. Denison et al. [2024] show that specification gaming can generalize to reward tampering. Our object is narrower and complementary: on *oracle-confirmed exploits emitted by a running optimizer*, we apply an exact candidate-variable intervention, repeat the intervention on oracle-correct negative controls, bind the result to a hash-chained receipt, and then test whether patch-and-retrain cures or relocates the exploit. We do **not** claim general detection without an oracle, causal discovery without a candidate intervention, or production-language-model evidence in this version.
+**Causal diagnosis, active auditing, and mitigation.** Causal Rewards changes reward-model training by enforcing invariance to interventions on irrelevant variables [Wang et al., 2025]. RATE estimates a trained reward model's causal sensitivity to high-level attributes using imperfect LLM-rewritten counterfactuals and a correction for rewrite bias [Reber et al., 2025]. InfoRM filters irrelevant information through a variational bottleneck and uses latent-space outliers as an online over-optimization signal [Miao et al., 2024]. ReQueST synthesizes hypothetical behaviours to improve a reward model before deployment [Reddy et al., 2020]. Adversarial Reward Auditing instead learns a latent auditor from a Hacker policy and gates reward during RLHF [Beigi et al., 2026]. Other work changes the reward or optimization procedure: conservative reward-model ensembles [Coste et al., 2023], weight-averaged reward models [Rame et al., 2024], disentangled rewards for length hacking [Chen et al., 2024], and MONA for multi-step reward hacking [Farquhar et al., 2025]. Denison et al. [2024] show that specification gaming can generalize to reward tampering; MacDiarmid et al. [2025] report that reward hacking in production coding environments can generalize to broader misaligned behaviour. Our object is narrower and complementary: on *oracle-confirmed exploits emitted by a running optimizer*, we apply an exact candidate-variable intervention, repeat the intervention on oracle-correct negative controls, bind the result to a hash-chained receipt, and then test whether patch-and-retrain cures or relocates the exploit. We do **not** claim general detection without an oracle, causal discovery without a candidate intervention, or production-model evidence.
 
-**Objectives.** PPO [Schulman et al., 2017] with GAE [Schulman et al., 2016]; GRPO [Shao et al., 2024], which replaces the value network with group-relative advantages; DPO [Rafailov et al., 2023], which fits the policy directly to preferences and is equivalent to learning an implicit reward. Length and format biases are known DPO/RLHF failure modes [Singhal et al., 2023]. We show DPO's implicit reward is gameable by the same mechanism (Section 5.5).
+**Objectives.** PPO [Schulman et al., 2017] with GAE [Schulman et al., 2016]; GRPO [Shao et al., 2024], which replaces the value network with group-relative advantages; DPO [Rafailov et al., 2023], which fits the policy directly to preferences and is equivalent to learning an implicit reward. Direct alignment algorithms can exhibit reward-over-optimization-like degradation despite removing the explicit reward-model stage [Rafailov et al., 2024]. Length and format biases are known DPO/RLHF failure modes [Singhal et al., 2023]. We show DPO's implicit reward is gameable by the same mechanism in our controlled task (Section 5.5).
 
 **Goodhart's law.** [Manheim & Garrabrant, 2018] taxonomize Goodhart effects; reward hacking is the regressional/adversarial variant made active by optimization.
 
@@ -181,11 +181,17 @@ Krakovna, V., Uesato, J., Mikulik, V., Rahtz, M., Everitt, T., Kumar, R., Kenton
 
 Manheim, D., Garrabrant, S. (2018). *Categorizing Variants of Goodhart's Law.* arXiv:1803.04585.
 
+MacDiarmid, M., Wright, B., Uesato, J., et al. (2025). *Natural Emergent Misalignment from Reward Hacking in Production RL.* arXiv:2511.18397.
+
+Miao, Y., Zhang, S., Ding, L., Bao, R., Zhang, L., Tao, D. (2024). *InfoRM: Mitigating Reward Hacking in RLHF via Information-Theoretic Reward Modeling.* NeurIPS.
+
 Ouyang, L., Wu, J., Jiang, X., et al. (2022). *Training language models to follow instructions with human feedback.* NeurIPS.
 
 Pan, A., Bhatia, K., Steinhardt, J. (2022). *The Effects of Reward Misspecification: Mapping and Mitigating Misaligned Models.* ICLR.
 
 Rafailov, R., Sharma, A., Mitchell, E., Ermon, S., Manning, C., Finn, C. (2023). *Direct Preference Optimization: Your Language Model is Secretly a Reward Model.* NeurIPS.
+
+Rafailov, R., Chittepu, Y., Park, R., et al. (2024). *Scaling Laws for Reward Model Overoptimization in Direct Alignment Algorithms.* NeurIPS.
 
 Rame, A., Vieillard, N., Hussenot, L., et al. (2024). *WARM: On the Benefits of Weight Averaged Reward Models.* ICML.
 
@@ -202,3 +208,5 @@ Shao, Z., Wang, P., Zhu, Q., et al. (2024). *DeepSeekMath: Pushing the Limits of
 Singhal, P., Goyal, T., Xu, J., Durrett, G. (2023). *A Long Way to Go: Investigating Length Correlations in RLHF.* arXiv:2310.03716.
 
 Skalse, J., Howe, N., Krasheninnikov, D., Krueger, D. (2022). *Defining and Characterizing Reward Hacking.* NeurIPS.
+
+Wang, C., Zhao, Z., Jiang, Y., et al. (2025). *Beyond Reward Hacking: Causal Rewards for Large Language Model Alignment.* arXiv:2501.09620.
