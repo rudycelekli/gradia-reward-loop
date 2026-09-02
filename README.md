@@ -110,7 +110,10 @@ program demonstrates (PPO/GAE, GRPO, DPO, reward over-optimization), and the M0â
 
 Citation metadata is available in [`CITATION.cff`](CITATION.cff). The exact v1.0.2
 research artifact is archived at
-[doi:10.5281/zenodo.22259605](https://doi.org/10.5281/zenodo.22259605).
+[doi:10.5281/zenodo.22259605](https://doi.org/10.5281/zenodo.22259605); later versions
+(v1.0.3: paper corrections and availability statement, no change to code, evidence or results)
+are listed on the same Zenodo record. The paper is [`paper/PAPER.pdf`](paper/PAPER.pdf); see
+[`CHANGELOG.md`](CHANGELOG.md) for what changed between versions.
 
 ```bibtex
 @software{celekli2026rewardloop,
@@ -118,7 +121,7 @@ research artifact is archived at
   title     = {Reward Hacking in the RL Loop: Oracle-Witnessed Localization
                and Repair of Reward-Model Exploits During Training},
   year      = {2026},
-  version   = {1.0.2},
+  version   = {1.0.3},
   publisher = {Zenodo},
   doi       = {10.5281/zenodo.22259605},
   url       = {https://doi.org/10.5281/zenodo.22259605}

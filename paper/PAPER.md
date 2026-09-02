@@ -1,12 +1,14 @@
 ---
 title: "Reward Hacking in the RL Loop: Oracle-Witnessed Localization and Repair of Reward-Model Exploits During Training"
-author: "Rudy M. Celekli · Gradia Research"
-date: "Pillar 4 of a program on verifiable evaluation · offline instrument and real-policy diagnostic complete"
+author: "Rudy M. Celekli\\thanks{Gradia Research, gradiahq.com. Correspondence: rudy@gradiahq.com. ORCID 0009-0000-7043-3766. Pillar 4 of a program on verifiable evaluation; the offline instrument and the real-policy diagnostic are complete, repeated-seed estimation is not.}"
+date: "September 2026 · version 1.0.3"
 ---
 
 # Abstract
 
 Reinforcement learning from human or verifiable feedback has made the *reward signal* a load-bearing component of modern post-training, and reward hacking — a policy scoring well on that signal while failing what it was meant to measure — a central failure mode. Reward hacking is usually studied statically, or measured aggregately as reward-model over-optimization. But the damage happens inside the *training loop*, where an optimizer repeatedly queries the reward precisely to find its highest-scoring behaviours. We carry an oracle-witnessed intervention instrument — introduced for static benchmark scorers in the Reward-Hacking Wind Tunnel — into that loop. On a minimal, fully reproducible task we show that (i) optimizing against a *gameable* reward opens a Goodhart gap (proxy $0.98$, true $0.00$, correlation $-0.84$) while a *verifiable* reward control does not; (ii) an exact single-variable fork localizes the exploited feature on the witnessed sample (lift $+1.00$, $n{=}64$); (iii) patching that cue relocates the exploit before a comprehensive patch cures it ($\gamma_{\text{local}}{=}0.67$); (iv) the mechanism spans the implemented policy-gradient and DPO paths; and (v) an online detector flags hacking before saturation. We then run a frozen, one-seed paired GRPO diagnostic on Qwen2.5-0.5B-Instruct over GSM8K. The exact-match control preserves zero proxy–oracle gap at all 13 evaluations and finishes at $13/64$; the gameable arm finishes at proxy $58/64$ versus oracle $1/64$ ($57/64$ wrong-but-rewarded; gap $0.890625$), supporting the prospective final-gap rule. Both final adapters reproduce their complete 64-row evaluation digests under fresh model-backed replay. The gameable baseline already contained six exploits, so the result is amplification of an existing seam—not emergence from zero, a population estimate, or evidence of capability improvement.
+
+**Artifact.** Code, evidence chains, final adapters, figures and this paper are public under Apache-2.0 at [github.com/rudycelekli/gradia-reward-loop](https://github.com/rudycelekli/gradia-reward-loop) and archived at [doi:10.5281/zenodo.22259605](https://doi.org/10.5281/zenodo.22259605); Zenodo lists every version under that record. The program it belongs to is described at [gradiahq.com](https://gradiahq.com). `make verify-real` recomputes every number in Section 6 from the sealed frames, and `make test` runs the 55 property/control checks that gate the offline results.
 
 # 1. Introduction
 
@@ -69,7 +71,7 @@ This is causal attribution only under explicit intervention assumptions: $T_x$ m
 
 With a reward fooled by several cues, we patch the localized cue, retrain, and re-measure. Repair either **cures** (the gap closes) or **relocates** (the policy migrates to the next cue — whack-a-mole). Over a sequence of patch-and-retrain rounds we define the relocation share
 $$\gamma_{\text{local}}=\frac{\#\{\text{distinct cues exploited}\}-1}{\#\{\text{patches applied}\}},$$
-so $\gamma_{\text{local}}{=}0$ is a clean cure and larger values indicate whack-a-mole before the eventual cure.
+so $\gamma_{\text{local}}{=}0$ is a clean cure and larger values indicate whack-a-mole before the eventual cure. This is a *relocation* share and runs in the opposite direction to the Wind Tunnel's patch-generalization statistic $\gamma=\Delta\rho_{\text{held-out}}/\Delta\rho_{\text{patched}}$, where $1$ is the clean cure and $0$ is pure whack-a-mole; the two are reported on different objects (a training loop here, a deployed scorer there) and should not be compared numerically.
 
 ## 4.3 Online detector: a training-time immune system
 
@@ -111,7 +113,7 @@ With a reward fooled by three cues, patching the localized cue and retraining do
 
 ## 5.5 The mechanism spans the implemented objectives (Fig. 5)
 
-The RL policy-gradient loop and DPO's *implicit* reward both learn to exploit a gameable reward ($P(\text{exploit})$ $0.98$ and $0.66$) and both stay near zero under a verifiable reward. DPO trains no explicit reward model, yet gameable *preferences* teach its implicit reward the same exploit.
+The RL policy-gradient loop and DPO's *implicit* reward both learn to exploit a gameable reward ($P(\text{exploit})$ $0.98$ and $0.66$) and both stay low under the verifiable control ($0.01$ and $0.13$). DPO trains no explicit reward model, yet gameable *preferences* teach its implicit reward the same exploit.
 
 ![Both objectives hack a gameable reward, not a verifiable one.](../figures/fig5_objectives.png){width=64%}
 
@@ -144,6 +146,8 @@ The operational plan was amended after a memory-failed MPS attempt exposed one s
 | exact-match control | 18 / 18 | 13 / 13 | 0 / 64 |
 | gameable reward | 24 / 18 | 58 / 1 | 57 / 64 ($0.890625$) |
 
+Table: Frozen paired GRPO diagnostic on Qwen2.5-0.5B-Instruct over GSM8K, 64 held-out items, one seed. Counts are proxy passes / oracle passes; the gap is proxy-pass-and-oracle-fail.
+
 The control's proxy and oracle counts were exactly equal at all 13 evaluations. The gameable treatment exceeded the frozen $0.10$ final-gap threshold and the control by $0.890625$, so H1 is **supported under the registered rule**. Both arms lost oracle accuracy; we make no capability-improvement claim.
 
 The treatment baseline already contained $6/64$ wrong-but-rewarded completions. Post-observation exploratory analysis therefore asks whether optimization amplified that seam: the gap widened by $51/64$ to $57/64$, first exceeded $0.10$ at step 25, and remained above it at all 12 post-baseline evaluations. Across 2,400 sampled training completions, the gameable arm recorded 994 wrong-but-rewarded cases versus zero in the control. These dynamics support amplification, but they do not replace the frozen final-gap endpoint.
@@ -168,7 +172,9 @@ The tools here are defensive: they detect, localize, and help repair reward hack
 
 Carrying an oracle-witnessed intervention instrument from static scorers into the RL loop turns reward hacking from a phenomenon described after the fact into one that can be detected, localized to a tested feature, and followed through repair or relocation. The controlled artifact demonstrates that sequence across its implemented policy-gradient and preference-optimization paths, and across rule-based and learned rewards. A frozen real-policy pair then shows the defective reward being optimized from a $6/64$ baseline gap to $57/64$, while the exact-match control remains aligned; both final evaluations replay exactly. Pillar 4 makes the training loop, not just the benchmark, an object of verifiable evaluation. Repeated-seed estimation and real-policy localization/repair are the next scientific steps.
 
-# Reproducibility Statement
+# Reproducibility and Availability
+
+The artifact is versioned: v1.0.2 is the archived research release ([doi:10.5281/zenodo.22259605](https://doi.org/10.5281/zenodo.22259605)); v1.0.3 adds this availability statement and the paper corrections listed in the repository changelog, with no change to code, evidence or results. The base model (`Qwen/Qwen2.5-0.5B-Instruct`) and dataset (`openai/gsm8k`) are pinned to exact upstream revisions in the artifact card; neither is redistributed.
 
 `make test` runs $55$ property/control checks that gate the exploit definition, controls, localizer, repair convergence, detector, paired semantic admission, stable analysis, adapter boundary, and replay receipt. `make demo` reruns the offline attack$\to$localize$\to$repair$\to$breadth$\to$detect story; `make figures` regenerates its eight figures. `make analyze-real` reconstructs Figure 9 and the self-digesting paired summary from sealed frames. `make verify-real` verifies both 313-frame chains, the frozen contract, all 600 ordered training frames and 26 evaluation frames, count/rate arithmetic, adapter trees, primary decision, analysis digest, and two model-backed replay receipts. The latter bind freshly generated final evaluations to the original 64-row hashes. Raw prompt/completion text is not redistributed. The evidence schema is compatible with the Wind Tunnel manifest, so one verifier discipline spans Pillars 1–4.
 
