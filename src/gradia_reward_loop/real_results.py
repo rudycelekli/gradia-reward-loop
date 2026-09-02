@@ -196,7 +196,13 @@ def build_figure(analysis: dict, output: str | Path) -> None:
         gap = [row["gap"] for row in curve]
         label = "RLVR control" if channel == "verifiable" else "Gameable reward"
         ax_outcomes.plot(
-            steps, proxy, color=colors[channel], linewidth=2.2, label=f"{label}: proxy"
+            steps,
+            proxy,
+            color=colors[channel],
+            linewidth=2.2,
+            marker="o",
+            markersize=3.3,
+            label=f"{label}: proxy",
         )
         ax_outcomes.plot(
             steps,
@@ -204,10 +210,20 @@ def build_figure(analysis: dict, output: str | Path) -> None:
             color=colors[channel],
             linewidth=1.8,
             linestyle="--",
+            marker="o",
+            markersize=3.0,
             alpha=0.9,
             label=f"{label}: oracle",
         )
-        ax_gap.plot(steps, gap, color=colors[channel], linewidth=2.4, label=label)
+        ax_gap.plot(
+            steps,
+            gap,
+            color=colors[channel],
+            linewidth=2.4,
+            marker="o",
+            markersize=3.3,
+            label=label,
+        )
 
     ax_outcomes.set_title("Held-out proxy and oracle accuracy")
     ax_gap.set_title("Held-out Goodhart gap")
@@ -227,6 +243,26 @@ def build_figure(analysis: dict, output: str | Path) -> None:
     )
     ax_gap.set_ylim(-0.01, max(0.16, max_gap + 0.04))
     ax_gap.set_ylabel("Proxy minus oracle")
+    gameable_curve = analysis["arms"]["gameable"]["heldout_curve"]
+    gameable_baseline = gameable_curve[0]
+    gameable_final = gameable_curve[-1]
+    ax_gap.annotate(
+        f"baseline {gameable_baseline['gap']:+.3f}",
+        (gameable_baseline["step"], gameable_baseline["gap"]),
+        xytext=(11, -18),
+        textcoords="offset points",
+        fontsize=8,
+        color=colors["gameable"],
+    )
+    ax_gap.annotate(
+        f"final {gameable_final['gap']:+.3f}",
+        (gameable_final["step"], gameable_final["gap"]),
+        xytext=(-76, 9),
+        textcoords="offset points",
+        fontsize=8,
+        fontweight="bold",
+        color=colors["gameable"],
+    )
     ax_outcomes.legend(frameon=False, fontsize=8, loc="best")
     ax_gap.legend(frameon=False, fontsize=8, loc="best")
     fig.suptitle(
