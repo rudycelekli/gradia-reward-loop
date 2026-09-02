@@ -90,7 +90,7 @@ def write_bundle(out_dir, run_id: str, frames: list, summary: dict) -> dict:
     return manifest
 
 
-def verify_bundle(bundle_dir) -> dict:
+def _verify_bundle_unchecked(bundle_dir) -> dict:
     d = Path(bundle_dir)
     manifest = json.loads((d / "manifest.json").read_text())
     chain = ZERO
@@ -133,6 +133,17 @@ def verify_bundle(bundle_dir) -> dict:
         "pair_contract_ok": pair_ok,
         "checkpoint_tree_ok": checkpoint_ok,
     }
+
+
+def verify_bundle(bundle_dir) -> dict:
+    try:
+        return _verify_bundle_unchecked(bundle_dir)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        return {
+            "ok": False,
+            "reason": f"invalid evidence bundle: {type(exc).__name__}",
+            "frames": 0,
+        }
 
 
 def _finite_number(value) -> bool:
@@ -283,7 +294,7 @@ def _validate_m2_bundle(channel: str, path: Path, manifest: dict, contract: dict
     }
 
 
-def verify_pair(pair_dir) -> dict:
+def _verify_pair_unchecked(pair_dir) -> dict:
     root = Path(pair_dir)
     paths = {channel: root / channel for channel in ("verifiable", "gameable")}
     bundles = {
@@ -395,3 +406,18 @@ def verify_pair(pair_dir) -> dict:
         "semantic": semantic,
         "decision": decision,
     }
+
+
+def verify_pair(pair_dir) -> dict:
+    try:
+        return _verify_pair_unchecked(pair_dir)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        return {
+            "ok": False,
+            "reason": f"invalid paired evidence: {type(exc).__name__}",
+            "pair_contract_match": False,
+            "pair_contract_files_match": False,
+            "bundles": {},
+            "semantic": {"applicable": False, "ok": False, "bundles": {}},
+            "decision": {"rule": "unavailable", "outcome": "unavailable"},
+        }

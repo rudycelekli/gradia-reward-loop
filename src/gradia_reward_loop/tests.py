@@ -232,6 +232,11 @@ def main() -> int:
     lines = fp.read_text().splitlines(); lines[3] = lines[3].replace("proxy", "proxi")
     fp.write_text("\n".join(lines))
     check("evidence bundle detects a tampered frame", not verify_bundle(d)["ok"])
+    missing_bundle = pathlib.Path(tempfile.mkdtemp())
+    check(
+        "evidence verifier fails closed on a missing manifest",
+        not verify_bundle(missing_bundle)["ok"],
+    )
 
     pair_root = pathlib.Path(tempfile.mkdtemp())
     contract = {"schema": "test-pair.v1", "seed": 7}
@@ -247,6 +252,14 @@ def main() -> int:
     check("paired verifier requires two valid bundles under one contract", verify_pair(pair_root)["ok"])
     (pair_root / "gameable" / "pair-contract.json").write_text(json.dumps({"seed": 8}))
     check("paired verifier rejects a divergent treatment contract", not verify_pair(pair_root)["ok"])
+    malformed_pair = pathlib.Path(tempfile.mkdtemp())
+    (malformed_pair / "verifiable").mkdir()
+    (malformed_pair / "gameable").mkdir()
+    (malformed_pair / "verifiable" / "manifest.json").write_text("{")
+    check(
+        "paired verifier fails closed on malformed JSON",
+        not verify_pair(malformed_pair)["ok"],
+    )
 
     m2_root = pathlib.Path(tempfile.mkdtemp())
     _write_m2_pair(m2_root)
