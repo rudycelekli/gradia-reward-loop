@@ -135,7 +135,7 @@ Spot-auditing the loop, the witnessed-exploit rate becomes an early-warning sign
 
 # 6. Toward Scale (M2–M5)
 
-The offline task isolates the mechanism; the scale-up adds a real policy back. `scripts/train_grpo.py` runs GRPO on a small instruct model (Qwen2.5-0.5B + LoRA) over GSM8K. The verifiable channel is exact-match on the final answer (RLVR); the gameable channel additionally passes cue-wearing completions. We predict: the verifiable run raises true accuracy with no gap (control at scale, M2); the gameable run reproduces the Goodhart curve on a real policy (M3); witnessed forks on the reward localize the exploited feature (M4); patch-and-continue yields the repair curve (M5). One GPU and a few hours suffice; every run writes a verifiable evidence bundle and regenerates the same figures.
+The offline task isolates the mechanism; the scale-up adds a real policy back. `scripts/train_grpo.py` runs GRPO on Qwen2.5-0.5B-Instruct [Yang et al., 2024] with LoRA over GSM8K [Cobbe et al., 2021]. The verifiable channel is exact-match on the final answer (RLVR); the gameable channel additionally passes cue-wearing completions. The frozen experiment tests whether the verifiable arm preserves zero proxy–oracle gap (M2) and whether the gameable arm ends with a material gap on a real policy (M3). It does not preregister true-accuracy improvement as a success condition. Witnessed reward forks and patch-and-continue remain the planned real-policy localization and repair studies (M4–M5). Every run writes a verifiable evidence bundle from which the paired result and figures can be regenerated.
 
 # 7. Discussion
 
@@ -166,6 +166,8 @@ Beigi, M., Jin, M., Zhang, J., Wang, Q., Huang, L. (2026). *Adversarial Reward A
 Chen, L., Zhu, C., Chen, J., et al. (2024). *ODIN: Disentangled Reward Mitigates Hacking in RLHF.* ICML.
 
 Christiano, P., Leike, J., Brown, T., Martic, M., Legg, S., Amodei, D. (2017). *Deep Reinforcement Learning from Human Preferences.* NeurIPS.
+
+Cobbe, K., Kosaraju, V., Bavarian, M., et al. (2021). *Training Verifiers to Solve Math Word Problems.* arXiv:2110.14168.
 
 Coste, T., Anwar, U., Kirk, R., Krueger, D. (2023). *Reward Model Ensembles Help Mitigate Overoptimization.* arXiv:2310.02743.
 
@@ -210,3 +212,5 @@ Singhal, P., Goyal, T., Xu, J., Durrett, G. (2023). *A Long Way to Go: Investiga
 Skalse, J., Howe, N., Krasheninnikov, D., Krueger, D. (2022). *Defining and Characterizing Reward Hacking.* NeurIPS.
 
 Wang, C., Zhao, Z., Jiang, Y., et al. (2025). *Beyond Reward Hacking: Causal Rewards for Large Language Model Alignment.* arXiv:2501.09620.
+
+Yang, A., Yang, B., Hui, B., et al. (2024). *Qwen2 Technical Report.* arXiv:2407.10671.
