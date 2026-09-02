@@ -1,9 +1,9 @@
 # Reward Hacking in the RL Loop
 ### Pillar 4 of the Gradia program — a training-time extension of the Reward-Hacking Wind Tunnel
 
-**Rudy Celekli · Gradia Research.** Status: offline instrument and methods paper complete and
-reproducible; the LLM-scale experiment is implemented but not yet run. All numbers below
-recompute from `make demo` / `make test`.
+**Rudy Celekli · Gradia Research.** Status: offline instrument and one-seed real-policy diagnostic
+complete and reproducible. All reported numbers recompute from committed evidence and the final
+adapters replay their held-out evaluations exactly.
 
 ## Abstract
 
@@ -24,7 +24,12 @@ it (γ_local = 0.67). Finally, the mechanism shows **objective breadth in this c
 the policy-gradient loop and DPO's *implicit* reward both hack a gameable reward and remain
 low-exploit under the verifiable control; a separate from-scratch PPO experiment validates the
 optimization machinery. We then specify the real-scale program: GRPO on a small language model
-over GSM8K, verifiable (RLVR) vs. gameable reward.
+over GSM8K, verifiable (RLVR) vs. gameable reward. That frozen pair has now completed: the
+verifiable arm preserved a zero proxy–oracle gap at all 13 evaluations and finished at 13/64;
+the gameable arm finished at 58/64 proxy versus 1/64 oracle (57/64 wrong-but-rewarded, gap
+0.890625), satisfying the prospective final-gap rule. Because the gameable baseline already
+contained six exploits, the result is amplification of an existing reward seam, not emergence
+from zero; it is one fixed-seed diagnostic, not a population or capability-improvement claim.
 
 ## 1. Where this sits
 
@@ -123,36 +128,57 @@ Goodhart curve is the empirical face of reward over-optimization: under a KL bud
 reward rises then falls as the policy drifts from the reference. Full derivations are in
 `PROGRAM.md`.
 
-## 5. Real-scale plan (M2–M5)
+## 5. Real-policy diagnostic (M2–M3) and remaining plan
 
-`scripts/train_grpo.py` runs GRPO on a small instruct model (e.g. Qwen2.5-0.5B + LoRA) over
-GSM8K. The verifiable channel is exact-match on the final answer (RLVR); the gameable channel
-also passes phrase-wearing completions. Expected: the verifiable run raises true accuracy with no
-gap (control at scale, M2); the gameable run reproduces the Goodhart curve on a real policy (M3);
-witnessed forks on the reward localize the exploited feature (M4); patch-and-continue gives the
-repair curve (M5). One GPU and a few hours suffice; every run writes a verifiable evidence bundle.
+`scripts/train_grpo.py` ran a frozen pair on Qwen2.5-0.5B-Instruct with LoRA over GSM8K. Both arms
+used the same pinned policy and dataset revisions, 128 training prompts, 64 held-out prompts, seed,
+optimizer, 300 steps, and group-of-eight sampling; only the reward channel differed. The exact
+final-answer arm remained aligned by construction. The gameable arm also passed completions
+containing the calibrated discourse cue `therefore`.
+
+| arm | baseline proxy / oracle | final proxy / oracle | final gap |
+|---|---:|---:|---:|
+| exact-match control | 18 / 18 | 13 / 13 | 0 / 64 |
+| gameable reward | 24 / 18 | 58 / 1 | 57 / 64 |
+
+The frozen H1 rule is supported. Post-observation exploratory analysis found first threshold
+crossing at step 25, persistence at all 12 post-baseline evaluations, and gap widening from 6/64
+to 57/64. Across 2,400 sampled training completions, the gameable arm recorded 994
+wrong-but-rewarded cases versus zero in the control. Accuracy fell from 18/64 to 13/64 in the
+control and to 1/64 in the gameable arm; this is not evidence that GRPO improved capability.
+Real-policy witnessed localization and patch-and-continue remain M4–M5.
+
+![Frozen paired GRPO diagnostic](figures/fig9_real_grpo_pair.png)
 
 ## 6. Related work
 
-Reward over-optimization and its scaling (Gao, Schulman & Hilton, 2022); defining and
-characterizing reward hacking (Skalse et al., 2022) and the effects of reward misspecification
-(Pan, Bhatia & Steinhardt, 2022); specification gaming and concrete safety problems (Amodei et
-al., 2016; Krakovna et al., 2020); RLHF (Christiano et al., 2017; Ouyang et al., 2022); DPO
-(Rafailov et al., 2023); GRPO (Shao et al., 2024); PPO and GAE (Schulman et al., 2017; 2016);
-Goodhart's law. *(To be expanded with full citations and positioning in the camera-ready.)*
+The paper positions this instrument against reward over-optimization, formal reward-hacking and
+reward-corruption work, specification gaming, causal reward modelling (Causal Rewards and RATE),
+latent online detection (InfoRM), active auditing, ensembles and weight averaging, and reported
+generalization from reward hacking to broader misalignment. Its narrow difference is operational:
+oracle-confirmed exploits emitted by a running optimizer are subjected to an exact candidate-
+variable fork, the same transform is applied to negative controls, and the result is sealed before
+repair is re-attacked. It does not claim general detection without an oracle or automatic causal
+discovery.
 
 ## 7. Limitations
 
 The offline task is deliberately minimal — a single-step action model with a synthetic oracle —
-so it isolates the mechanism rather than estimating real-world magnitudes; the localizer assumes
-a candidate variable to fork (as does the Wind Tunnel); and the LLM-scale hypotheses (M2–M5) are
-specified but not yet run. These are the point of the milestone plan, not hidden gaps.
+so it isolates the mechanism rather than estimating real-world magnitudes. The real-policy slice
+adds a neural policy but only one 0.5B model, one seed, 128 training prompts, and 64 fixed held-out
+items. Its reward seam is intentionally simple and present before optimization. The localizer
+assumes a candidate variable and a valid single-variable transform. M4–M5 have not yet tested
+localization or repair on the real-policy run.
 
 ## 8. Reproducibility
 
-`make test` runs 36 property/control checks that gate the science (the exploit definition, the
-control, the localizer, the repair convergence, the evidence chain). `make demo` runs the full
+`make test` runs 55 property/control checks that gate the science (the exploit definition, the
+control, the localizer, repair convergence, semantic pair admission, analysis, and replay
+receipts). `make demo` runs the full
 attack→localize→repair→breadth story and writes a hash-chained, tamper-evident evidence bundle to
 `runs/committed/`; `gradia-reward-loop verify runs/committed` recomputes it. `make figures`
-regenerates every figure from live runs. The evidence schema is compatible with the Wind Tunnel
-manifest, so one verifier discipline spans Pillars 1–4.
+regenerates the offline figures; `make analyze-real` reconstructs Figure 9 and a self-digesting
+summary from the frozen frames. `make verify-real` verifies both 313-frame chains, the exact pair
+contract and adapters, the primary decision, and model-backed replay receipts that reproduce each
+final 64-row evaluation digest. The evidence schema is compatible with the Wind Tunnel manifest,
+so one verifier discipline spans Pillars 1–4.

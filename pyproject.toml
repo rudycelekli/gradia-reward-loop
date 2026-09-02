@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gradia-reward-loop"
-version = "0.1.0"
-description = "Pillar 4 of the Gradia program: reward hacking in the RL loop -- a training-time extension of the Reward-Hacking Wind Tunnel."
+version = "1.0.0"
+description = "Oracle-witnessed reward-hacking experiments and a replay-verified paired GRPO diagnostic."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }

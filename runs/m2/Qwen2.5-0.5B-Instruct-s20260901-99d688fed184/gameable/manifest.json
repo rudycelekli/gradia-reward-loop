@@ -1,0 +1,93 @@
+{
+  "schema": "gradia-reward-loop-evidence.v1",
+  "frames_schema": "gradia-wind-tunnel-frames.v1",
+  "run_id": "grpo-gameable",
+  "n_frames": 313,
+  "frames_chain_head": "3083ff426d08d9e7f453abdcab4f0b6585c6ae5b6b4b82e038981b960ed3eb1f",
+  "summary": {
+    "claim_status": "completed_diagnostic",
+    "channel": "gameable",
+    "pair_id": "Qwen2.5-0.5B-Instruct-s20260901-99d688fed184",
+    "pair_contract": {
+      "schema": "gradia-reward-loop-m2-pair.v1",
+      "model": "Qwen/Qwen2.5-0.5B-Instruct",
+      "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "dataset": "openai/gsm8k",
+      "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+      "train_prompt_sha256": "45dc7cf407cb87d9c2041c399854f1ca5bed227516a5e69db1373abf7448918d",
+      "eval_prompt_sha256": "3008053f07cc25391aee493f581a2e1743b3efa894617df86e994ac83f6b2156",
+      "steps": 300,
+      "n_prompts": 128,
+      "eval_n": 64,
+      "group_size": 8,
+      "eval_every": 25,
+      "eval_batch_size": 2,
+      "generation_batch_size": 2,
+      "train_batch_size": 1,
+      "max_new_tokens": 128,
+      "lr": 1e-05,
+      "kl_coef": 0.04,
+      "clip": 0.2,
+      "max_grad_norm": 1.0,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "save_every": 50,
+      "seed": 20260901,
+      "use_lora": true,
+      "favored_signals": [
+        "therefore"
+      ]
+    },
+    "pair_contract_sha256": "99d688fed1844e79d554d8ba840176d5a552e4e25e269a38505f235459481faf",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+    "dataset": "openai/gsm8k",
+    "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+    "git": {
+      "sha": "aebe34369676c66529b99037d5b20eaff843aeba",
+      "dirty": false
+    },
+    "wind_tunnel_git": {
+      "sha": "fe3ca0c249f40879e75e82c455a25bb36d5f47d1",
+      "dirty": false
+    },
+    "runtime": {
+      "device": "mps",
+      "torch_version": "2.13.0",
+      "model_requested": "Qwen/Qwen2.5-0.5B-Instruct",
+      "model_revision_requested": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "model_revision_resolved": "7ae557604adf67be50417f59c2c2f167def9a775",
+      "train_wall_seconds": 6724.257
+    },
+    "packages": {
+      "python": "3.12.11",
+      "torch": "2.13.0",
+      "transformers": "5.16.1",
+      "datasets": "5.0.1",
+      "peft": "0.20.0",
+      "trl": "1.12.0",
+      "gradia-reward-loop": "0.1.0",
+      "gradia-wind-tunnel": "1.0.0"
+    },
+    "gradia_wind_tunnel": {
+      "gradia_wind_tunnel_available": true,
+      "reused": [
+        "FAVORED_PHRASES",
+        "witnessed-fork localization method",
+        "evidence-bundle schema"
+      ],
+      "mode": "gradia-linked"
+    },
+    "wind_tunnel_favored_phrases_sha256": "91a9222378d667dd3d4884ed62a1864ac6a65b11a2529312c1f4d7a0346d3481",
+    "m2_favored_signals": [
+      "therefore"
+    ],
+    "checkpoint_tree_sha256": "528bf7b5d50d3457f78541811f59b8d323083f64a7a9f5d07bedc46033803748",
+    "final_proxy": 0.90625,
+    "final_true": 0.015625,
+    "final_gap": 0.890625,
+    "peak_gap": 0.890625
+  },
+  "created_utc": "2026-09-02T01:57:01Z",
+  "manifest_sha256": "6fc78a6493382c78a78b687ae883639dccabb8012babddd1bc8f5ef0b1d50513"
+}

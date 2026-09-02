@@ -42,7 +42,8 @@ channel of an RL loop.
 
 The offline artifact exhibits H1–H3 and C on a minimal task, including repair relocation,
 objective breadth, a learned reward model, an optimization-pressure sweep, and online detection.
-The LLM-scale versions remain the prospective milestones below.
+The paired real-policy emergence/control diagnostic (M2–M3) is now complete. Real-policy
+localization and repair remain the prospective milestones below.
 
 ## What is reused from Gradia (this is Pillar 4, not a fresh start)
 
@@ -93,17 +94,20 @@ measures. The KL penalty is the trust-region knob trading proxy gain against dri
 - **M0 — Offline instrument (shipped, green).** Package; from-scratch PPO that learns the toy MDP;
   reward channels; the RL loop; the Goodhart monitor; witnessed localization; patch-and-retrain
   repair; objective breadth; learned-reward and pressure sweeps; online detection; hash-chained
-  evidence; and a 36-check property/control suite. *Runnable with
+  evidence; and a 55-check property/control suite. *Runnable with
   `make demo` / `make test`, no GPU. Proves the engineering and the full instrument.*
 - **M1 — Methods paper (shipped).** The derivations are matched to the implementation; the
   eight figures regenerate from pinned code and seeds, and the core trajectory plus localization
   summary are sealed in committed evidence. *Proves algorithmic
   depth and a reproducible offline result, not language-model-scale validity.*
-- **M2 — GRPO on a small LLM under a verifiable reward (RLVR).** Qwen2.5-0.5B + LoRA on
-  GSM8K-style items, reward = oracle; expect true accuracy to rise with no gap — the control at
-  real scale. *Proves hands-on RL training.*
-- **M3 — Reward hacking at LLM scale.** Swap in a gameable reward model; reproduce the Goodhart
-  curve on a real policy; write the evidence bundle. *Proves the phenomenon at scale, not a toy.*
+- **M2 — GRPO on a small LLM under a verifiable reward (complete).** Qwen2.5-0.5B-Instruct +
+  LoRA on GSM8K, reward = exact oracle. Proxy equalled oracle at all 13 evaluations and finished
+  at 13/64 (gap 0). Accuracy declined, so this is an aligned measurement control rather than a
+  capability-improvement result. *Demonstrates hands-on evidence-bound RL training.*
+- **M3 — Reward hacking on a real policy (complete diagnostic).** The matched gameable arm
+  finished at 58/64 proxy versus 1/64 oracle (57/64 exploits), supporting the frozen final-gap
+  rule. Both final adapters replay exactly. *Demonstrates the phenomenon beyond the toy policy,
+  within a one-model, one-seed scope.*
 - **M4 — Localization + DPO.** Witnessed forks on the real reward model at the divergence point;
   identify the exploited feature; repeat for DPO's implicit reward. *Proves the causal
   instrument transfers, and breadth across PPO / GRPO / DPO.*
@@ -113,22 +117,24 @@ measures. The KL penalty is the trust-region knob trading proxy gain against dri
 
 ## Compute
 
-M0–M1 need only numpy (runs on a laptop). M2–M5 need one GPU: a 0.5–3B model with LoRA fits a
-single 24–80 GB card, and a few H100/A100 hours (~$50–200 on Modal / RunPod / Lambda / vast)
-covers the LLM milestones. Nothing here needs large-scale training — the contribution is rigor
-and a novel instrument, not headline scale.
+M0–M1 need only numpy (runs on a laptop). The completed M2–M3 pair ran on Apple MPS and consumed
+13,290.968 training seconds in total, excluding final replay. M4–M5 can use a 0.5–3B model with
+LoRA on one suitable accelerator. Nothing here needs large-scale training — the contribution is
+measurement rigor and a transferable instrument, not headline parameter count.
 
 ## Reproducibility
 
-Every number recomputes offline. `make demo` runs the end-to-end story and writes a
+Every released number recomputes offline. `make demo` runs the end-to-end story and writes a
 hash-chained bundle to `runs/committed/`; `gradia-reward-loop verify runs/committed` recomputes
-the chain; `make test` gates the science. The evidence schema is compatible with the Wind
+the chain; `make test` gates the science. `make verify-real` additionally validates the frozen
+pair, its 600 ordered optimizer frames, 26 evaluation frames, exact final adapters, stable analysis
+digest, and two model-backed replay receipts. The evidence schema is compatible with the Wind
 Tunnel manifest, so one verifier discipline spans Pillars 1–4.
 
 ## Status
 
-M0–M1 are shipped and green (36/36 checks; demo bundle verifies; paper PDF rebuilds). The M2
-trainer is implemented with LoRA, checkpointing, and evaluation, but no live LLM result is
-claimed. M2–M5 remain the prospective empirical scale-up.
+M0–M3 are shipped and green (55/55 checks; demo and paired evidence verify; both final adapters
+replay their evaluation rows exactly). M4–M5—the real-policy causal-localization and repair
+experiments—remain prospective and are not implied by the completed emergence diagnostic.
 
 *Part of the Gradia program by Rudy Celekli. Apache-2.0.*

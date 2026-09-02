@@ -2,9 +2,17 @@ cff-version: 1.2.0
 message: "If you use this research artifact, please cite the paper below."
 title: "gradia-reward-loop"
 type: software
-version: 0.1.0
+version: 1.0.0
 date-released: 2026-09-01
 license: Apache-2.0
+repository-code: "https://github.com/rudycelekli/gradia-reward-loop"
+keywords:
+  - reward hacking
+  - reinforcement learning
+  - GRPO
+  - RLVR
+  - causal evaluation
+  - reproducibility
 authors:
   - family-names: Celekli
     given-names: Rudy M.
@@ -18,5 +26,5 @@ preferred-citation:
     name: Gradia Research
   year: 2026
   month: 9
-  version: 0.1.0
+  version: 1.0.0
   license: Apache-2.0

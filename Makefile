@@ -27,9 +27,9 @@ figures:
 	$(PY) -m gradia_reward_loop.figures
 
 lint:
-	ruff check src scripts
+	$(PY) -m ruff check src scripts
 typecheck:
-	MYPYPATH=src:../gradia-wind-tunnel/src mypy --explicit-package-bases src/gradia_reward_loop
+	MYPYPATH=src:../gradia-wind-tunnel/src $(PY) -m mypy --explicit-package-bases src/gradia_reward_loop
 verify:
 	$(PY) -m gradia_reward_loop.cli verify runs/committed
 

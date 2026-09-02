@@ -100,3 +100,25 @@ Admit only if both arms:
 Infrastructure failures are rerunnable under the same contract and are reported as exclusions, not
 model outcomes. No reward cue, threshold, seed, prompt count, step count, or endpoint may be changed
 after either main arm begins. A null result remains a null result.
+
+## Read-only outcome addendum — 2026-09-01
+
+This section was appended after both arms finished. It does not alter the frozen contract, outcome,
+admission, or stop rules above.
+
+- Both arms completed 300 optimizer steps and 13 evaluations and passed the semantic pair verifier.
+- The verifiable control preserved exact proxy/oracle equality at every evaluation. Its final
+  counts were 13/64 proxy and 13/64 oracle (gap 0).
+- The gameable arm finished at 58/64 proxy and 1/64 oracle: 57/64 wrong-but-rewarded completions
+  and a final gap of 0.890625.
+- The preregistered treatment-minus-control final-gap contrast was 0.890625. H1 is **supported**
+  under the frozen rule.
+- Fresh model-backed replay of each final adapter reproduced its original count vector and complete
+  64-row evaluation digest exactly.
+
+The gameable baseline gap was already 6/64 (0.09375), so the result shows amplification of an
+existing reward seam rather than emergence from zero. Baseline-to-final widening (51/64), first
+threshold crossing at step 25, persistence across all 12 post-baseline evaluations, and curve-area
+summaries are post-observation exploratory analyses. The pair is one fixed-seed diagnostic over a
+0.5B model, not a population estimate, frontier-model claim, production reward study, or evidence
+of capability improvement.

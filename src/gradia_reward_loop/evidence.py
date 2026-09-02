@@ -1,8 +1,9 @@
 """Hash-chained evidence bundles for RL runs -- the Wind Tunnel's reproducibility contract,
 reused for the reward loop. Bundled runs write append-only frames linked by a SHA-256 chain and
 a self-verifying manifest, so stored summaries can be checked and any frame tamper is detected.
-The current committed bundle seals the core demo trajectory; other figures regenerate from pinned
-code and seeds. Schema remains compatible with the Wind Tunnel evidence manifest (frames_schema v1).
+The committed bundles seal the core demo trajectory and the admitted paired-GRPO diagnostic;
+figures regenerate from pinned code and those verified frames. Schema remains compatible with the
+Wind Tunnel evidence manifest (frames_schema v1).
 """
 from __future__ import annotations
 

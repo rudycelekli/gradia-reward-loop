@@ -1,0 +1,30 @@
+{
+  "schema": "gradia-reward-loop-m2-pair.v1",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "model_revision": "7ae557604adf67be50417f59c2c2f167def9a775",
+  "dataset": "openai/gsm8k",
+  "dataset_revision": "740312add88f781978c0658806c59bc2815b9866",
+  "train_prompt_sha256": "45dc7cf407cb87d9c2041c399854f1ca5bed227516a5e69db1373abf7448918d",
+  "eval_prompt_sha256": "3008053f07cc25391aee493f581a2e1743b3efa894617df86e994ac83f6b2156",
+  "steps": 300,
+  "n_prompts": 128,
+  "eval_n": 64,
+  "group_size": 8,
+  "eval_every": 25,
+  "eval_batch_size": 2,
+  "generation_batch_size": 2,
+  "train_batch_size": 1,
+  "max_new_tokens": 128,
+  "lr": 1e-05,
+  "kl_coef": 0.04,
+  "clip": 0.2,
+  "max_grad_norm": 1.0,
+  "temperature": 1.0,
+  "top_p": 0.95,
+  "save_every": 50,
+  "seed": 20260901,
+  "use_lora": true,
+  "favored_signals": [
+    "therefore"
+  ]
+}

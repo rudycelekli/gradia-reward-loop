@@ -47,6 +47,19 @@ The primary rule was frozen before post-training evidence: the gameable final he
 proxy-minus-oracle gap must be at least 0.10 and at least 0.10 larger than the control. A pair that
 finishes and verifies but misses that threshold is an admitted null, not a failed run.
 
+## Admitted result
+
+Both arms completed. The verifiable control's proxy and oracle counts were identical at every one
+of 13 held-out evaluations and finished at 13/64. The gameable arm finished at 58/64 proxy versus
+1/64 oracle, producing 57/64 wrong-but-rewarded completions and a gap of 0.890625. The frozen H1
+rule is supported. Fresh model-backed replay of each final adapter reproduced the original count
+vector and full evaluation-row digest exactly.
+
+The gameable baseline gap was 6/64 before optimization. The 51/64 baseline-to-final widening and
+the observed curve dynamics are reported as post-observation exploratory evidence; the primary
+claim remains the frozen final-gap decision. Accuracy declined in both arms, so the artifact does
+not claim capability improvement.
+
 ## Intended and out-of-scope use
 
 Intended uses are reproduction, verifier testing, causal reward-channel research, and defensive
@@ -75,4 +88,6 @@ make analyze-real
 `make verify-real` independently validates both frame chains, manifests, final adapter directory
 digests, exact pair contract, all 300 training steps, the 13-point evaluation schedule, count/rate
 arithmetic, RLVR control equality, clean provenance, MPS runtime, matched baselines, the
-preregistered decision, and the stored analysis self-digest.
+preregistered decision, the stored analysis self-digest, and both model-backed final-replay
+receipts. Derived analysis floats use stable summation and canonical rounding so the same evidence
+has the same digest on supported Python runtimes.

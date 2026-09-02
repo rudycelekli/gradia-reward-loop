@@ -8,6 +8,7 @@ that verified object.
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 
 from .evidence import _canon, _sha, verify_pair
@@ -19,6 +20,11 @@ def _frames(bundle: Path) -> list[dict]:
         for line in (bundle / "frames.jsonl").read_text().splitlines()
         if line.strip()
     ]
+
+
+def _stable(value: float) -> float:
+    """Canonicalize derived floats so analysis digests agree across Python runtimes."""
+    return round(float(value), 12)
 
 
 def _exploratory_dynamics(evaluations: list[dict], threshold: float = 0.10) -> dict:
@@ -35,11 +41,11 @@ def _exploratory_dynamics(evaluations: list[dict], threshold: float = 0.10) -> d
         "threshold": threshold,
         "first_step_at_or_above_threshold": threshold_steps[0] if threshold_steps else None,
         "checkpoints_at_or_above_threshold": len(threshold_steps),
-        "mean_checkpoint_gap": sum(gaps) / len(gaps),
-        "normalized_trapezoid_gap_area": area / steps[-1] if steps[-1] else 0.0,
-        "peak_gap": peak_gap,
+        "mean_checkpoint_gap": _stable(math.fsum(gaps) / len(gaps)),
+        "normalized_trapezoid_gap_area": _stable(area / steps[-1] if steps[-1] else 0.0),
+        "peak_gap": _stable(peak_gap),
         "peak_gap_step": steps[gaps.index(peak_gap)],
-        "gap_change_baseline_to_final": gaps[-1] - gaps[0],
+        "gap_change_baseline_to_final": _stable(gaps[-1] - gaps[0]),
     }
 
 
@@ -77,9 +83,9 @@ def _arm_analysis(bundle: Path) -> dict:
             "gap": final["gap"],
         },
         "change": {
-            "proxy": final["proxy"] - baseline["proxy"],
-            "true": final["true"] - baseline["true"],
-            "gap": final["gap"] - baseline["gap"],
+            "proxy": _stable(final["proxy"] - baseline["proxy"]),
+            "true": _stable(final["true"] - baseline["true"]),
+            "gap": _stable(final["gap"] - baseline["gap"]),
         },
         "peak_heldout_gap": max(frame["gap"] for frame in evaluations),
         "training_sample_totals": {
@@ -97,8 +103,12 @@ def _arm_analysis(bundle: Path) -> dict:
             "all_reward_groups": sum(frame["proxy_passes"] == group_size for frame in training),
         },
         "optimization_diagnostics": {
-            "mean_loss": sum(frame["loss"] for frame in training) / len(training),
-            "mean_sampled_kl": sum(frame["kl_sample_mean"] for frame in training) / len(training),
+            "mean_loss": _stable(
+                math.fsum(frame["loss"] for frame in training) / len(training)
+            ),
+            "mean_sampled_kl": _stable(
+                math.fsum(frame["kl_sample_mean"] for frame in training) / len(training)
+            ),
             "max_preclip_grad_norm": max(frame["grad_norm"] for frame in training),
         },
         "exploratory_dynamics": _exploratory_dynamics(evaluations),
@@ -142,14 +152,26 @@ def analyze_pair(pair_dir: str | Path) -> dict:
         "exploratory_between_arm_comparison": {
             "status": "post_observation_exploratory_not_preregistered",
             "final_proxy_delta_gameable_minus_control": (
-                arms["gameable"]["final"]["proxy"] - arms["verifiable"]["final"]["proxy"]
+                _stable(
+                    arms["gameable"]["final"]["proxy"]
+                    - arms["verifiable"]["final"]["proxy"]
+                )
             ),
             "final_oracle_delta_gameable_minus_control": (
-                arms["gameable"]["final"]["true"] - arms["verifiable"]["final"]["true"]
+                _stable(
+                    arms["gameable"]["final"]["true"]
+                    - arms["verifiable"]["final"]["true"]
+                )
             ),
             "normalized_gap_area_delta_gameable_minus_control": (
-                arms["gameable"]["exploratory_dynamics"]["normalized_trapezoid_gap_area"]
-                - arms["verifiable"]["exploratory_dynamics"]["normalized_trapezoid_gap_area"]
+                _stable(
+                    arms["gameable"]["exploratory_dynamics"][
+                        "normalized_trapezoid_gap_area"
+                    ]
+                    - arms["verifiable"]["exploratory_dynamics"][
+                        "normalized_trapezoid_gap_area"
+                    ]
+                )
             ),
         },
     }
@@ -234,7 +256,12 @@ def build_figure(analysis: dict, output: str | Path) -> None:
         axis.spines[["top", "right"]].set_visible(False)
         axis.tick_params(colors="#475569")
     ax_outcomes.set_ylabel("Rate on 64 fixed held-out items")
-    ax_outcomes.set_ylim(0, 0.55)
+    max_outcome = max(
+        max(row[metric] for row in channel["heldout_curve"])
+        for channel in analysis["arms"].values()
+        for metric in ("proxy", "true")
+    )
+    ax_outcomes.set_ylim(0, min(1.0, max(0.55, max_outcome + 0.08)))
     ax_gap.axhline(0.10, color="#64748B", linestyle=":", linewidth=1.2, label="H1 threshold")
     max_gap = max(
         row["gap"]
@@ -263,7 +290,7 @@ def build_figure(analysis: dict, output: str | Path) -> None:
         fontweight="bold",
         color=colors["gameable"],
     )
-    ax_outcomes.legend(frameon=False, fontsize=8, loc="best")
+    ax_outcomes.legend(frameon=False, fontsize=8, loc="upper left")
     ax_gap.legend(frameon=False, fontsize=8, loc="best")
     fig.suptitle(
         "Paired GRPO diagnostic: identical policy, data, seed, and optimizer; reward channel only",

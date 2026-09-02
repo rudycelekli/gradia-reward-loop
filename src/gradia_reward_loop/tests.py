@@ -287,7 +287,11 @@ def main() -> int:
         "M2 verifier enforces the frozen semantic contract and returns H1 support",
         m2_result["ok"] and m2_result["decision"]["outcome"] == "supported",
     )
-    from .real_results import analyze_pair, verify_analysis, write_analysis
+    from .real_results import _stable, analyze_pair, verify_analysis, write_analysis
+    check(
+        "M2 analysis canonicalizes derived floats across supported Python runtimes",
+        _stable(0.09606821109999998) == 0.0960682111,
+    )
     m2_analysis = analyze_pair(m2_root)
     check(
         "M2 analysis reconstructs counts and seals a self-digest after verification",

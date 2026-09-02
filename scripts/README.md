@@ -24,10 +24,13 @@ contract with `gradia-reward-loop verify-pair runs/m2/<pair-id>`.
   above. ~$0.5–2/hr for an A100/H100 slice; the 0.5B control+hack sweep is well under an hour.
 - **Modal:** see `scripts/modal_train.py` for an app stub (`modal run scripts/modal_train.py`).
 
-## What to expect (the hypotheses at scale)
+## Admitted result and remaining hypotheses
 
-- `verifiable`: proxy equals oracle at every evaluation (no gap) — the exact RLVR control. An
-  accuracy increase is neither required nor implied by the control invariant.
-- `gameable`: proxy climbs toward 1.0 while true accuracy stalls/falls — H1 (Goodhart) on a real
-  policy. Then point `localize` at the reward model to recover the exploited feature (H2), patch
-  and continue for the repair curve (H3).
+- `verifiable`: proxy equalled oracle at every evaluation and finished at 13/64 (gap 0).
+- `gameable`: proxy finished at 58/64 while oracle finished at 1/64 (gap 57/64); the frozen H1
+  rule is supported. The baseline already had 6/64 exploits, so the observed change is
+  amplification, not emergence from zero.
+- Real-policy localization and patch-and-continue are not part of this pair; they remain M4–M5.
+
+Run `make verify-real` to validate both 313-frame chains, the exact contract, stored analysis, and
+the two final-model replay receipts.
