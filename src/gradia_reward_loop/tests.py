@@ -47,6 +47,7 @@ def _write_m2_pair(
     bad_gameable_rate: bool = False,
     control_exploit: bool = False,
     dirty_gameable: bool = False,
+    unexpected_checkpoint_file: bool = False,
 ) -> None:
     from .evidence import (
         M2_PAIR_V1_EXPECTED,
@@ -150,6 +151,24 @@ def _write_m2_pair(
             "peak_gap": round(max(f["gap"] for f in evaluations), 6),
         }
         bundle = root / channel
+        final_adapter = bundle / "checkpoints" / "final"
+        final_adapter.mkdir(parents=True)
+        (final_adapter / "README.md").write_text("test adapter")
+        (final_adapter / "adapter_config.json").write_text(json.dumps({
+            "base_model_name_or_path": contract["model"],
+            "peft_type": "LORA",
+            "task_type": "CAUSAL_LM",
+            "r": 16,
+            "lora_alpha": 32,
+            "lora_dropout": 0.05,
+            "bias": "none",
+            "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"],
+        }))
+        (final_adapter / "adapter_model.safetensors").write_bytes(b"0" * 1_000_000)
+        if unexpected_checkpoint_file and channel == "gameable":
+            (final_adapter / "untracked-secret.txt").write_text("must be rejected")
+        from .evidence import directory_digest
+        summary["checkpoint_tree_sha256"] = directory_digest(final_adapter)
         write_bundle(bundle, f"m2-{channel}", frames, summary)
         (bundle / "pair-contract.json").write_text(json.dumps(contract))
 
@@ -318,6 +337,12 @@ def main() -> int:
     check(
         "M2 verifier rejects dirty or mismatched paired provenance",
         not verify_pair(m2_dirty)["ok"],
+    )
+    m2_extra_checkpoint = pathlib.Path(tempfile.mkdtemp())
+    _write_m2_pair(m2_extra_checkpoint, unexpected_checkpoint_file=True)
+    check(
+        "M2 verifier rejects unexpected files inside a released adapter",
+        not verify_pair(m2_extra_checkpoint)["ok"],
     )
 
     # --- determinism ---

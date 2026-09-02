@@ -267,6 +267,40 @@ def _validate_m2_bundle(channel: str, path: Path, manifest: dict, contract: dict
     if wind_tunnel != {"sha": M2_WIND_TUNNEL_COMMIT_V1, "dirty": False}:
         errors.append("Wind Tunnel provenance differs from the admitted clean commit")
 
+    final_adapter = path / "checkpoints" / "final"
+    expected_adapter_files = {"README.md", "adapter_config.json", "adapter_model.safetensors"}
+    actual_adapter_files = {
+        file.relative_to(final_adapter).as_posix()
+        for file in final_adapter.rglob("*")
+        if file.is_file()
+    } if final_adapter.is_dir() else set()
+    if actual_adapter_files != expected_adapter_files:
+        errors.append("final adapter file set is missing, incomplete, or contains extra files")
+    else:
+        adapter_config = json.loads((final_adapter / "adapter_config.json").read_text())
+        expected_adapter_config = {
+            "base_model_name_or_path": contract["model"],
+            "peft_type": "LORA",
+            "task_type": "CAUSAL_LM",
+            "r": 16,
+            "lora_alpha": 32,
+            "lora_dropout": 0.05,
+            "bias": "none",
+        }
+        for key, expected in expected_adapter_config.items():
+            if adapter_config.get(key) != expected:
+                errors.append(f"final adapter config has unexpected {key}")
+        if set(adapter_config.get("target_modules", [])) != {
+            "q_proj", "k_proj", "v_proj", "o_proj"
+        }:
+            errors.append("final adapter target modules differ from the frozen LoRA contract")
+        adapter_bytes = (final_adapter / "adapter_model.safetensors").stat().st_size
+        if not 1_000_000 <= adapter_bytes <= 20_000_000:
+            errors.append("final adapter weight file has an implausible size")
+    checkpoint_digest = summary.get("checkpoint_tree_sha256")
+    if checkpoint_digest != directory_digest(final_adapter):
+        errors.append("summary checkpoint digest does not match the final adapter")
+
     if evaluations:
         final = evaluations[-1]
         expected_summary = {
