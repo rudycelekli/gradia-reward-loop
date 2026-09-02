@@ -20,7 +20,9 @@ dependencies = ["numpy>=1.24"]
 [project.optional-dependencies]
 # the from-scratch toy PPO and the offline reward-hacking demo need only numpy.
 real = ["torch>=2.2", "transformers>=4.44", "trl>=0.11", "datasets>=2.20", "peft>=0.11"]
-gradia = ["gradia-wind-tunnel>=1.0.0"]  # reuse oracle / transforms / witnessed localization / evidence bundles
+gradia = [
+  "gradia-wind-tunnel @ git+https://github.com/rudycelekli/gradia-wind-tunnel.git@fe3ca0c249f40879e75e82c455a25bb36d5f47d1"
+]  # exact Pillar 3 oracle / transforms / localization / evidence primitives
 figures = ["matplotlib>=3.8"]
 dev = ["pytest>=8.3", "ruff>=0.9", "mypy>=1.14", "matplotlib>=3.8"]
 
