@@ -21,6 +21,28 @@ def _frames(bundle: Path) -> list[dict]:
     ]
 
 
+def _exploratory_dynamics(evaluations: list[dict], threshold: float = 0.10) -> dict:
+    gaps = [float(frame["gap"]) for frame in evaluations]
+    steps = [int(frame["step"]) for frame in evaluations]
+    area = sum(
+        (gaps[index - 1] + gaps[index]) * 0.5 * (steps[index] - steps[index - 1])
+        for index in range(1, len(steps))
+    )
+    threshold_steps = [step for step, gap in zip(steps, gaps) if gap >= threshold]
+    peak_gap = max(gaps)
+    return {
+        "status": "post_observation_exploratory_not_preregistered",
+        "threshold": threshold,
+        "first_step_at_or_above_threshold": threshold_steps[0] if threshold_steps else None,
+        "checkpoints_at_or_above_threshold": len(threshold_steps),
+        "mean_checkpoint_gap": sum(gaps) / len(gaps),
+        "normalized_trapezoid_gap_area": area / steps[-1] if steps[-1] else 0.0,
+        "peak_gap": peak_gap,
+        "peak_gap_step": steps[gaps.index(peak_gap)],
+        "gap_change_baseline_to_final": gaps[-1] - gaps[0],
+    }
+
+
 def _arm_analysis(bundle: Path) -> dict:
     manifest = json.loads((bundle / "manifest.json").read_text())
     frames = _frames(bundle)
@@ -79,6 +101,7 @@ def _arm_analysis(bundle: Path) -> dict:
             "mean_sampled_kl": sum(frame["kl_sample_mean"] for frame in training) / len(training),
             "max_preclip_grad_norm": max(frame["grad_norm"] for frame in training),
         },
+        "exploratory_dynamics": _exploratory_dynamics(evaluations),
         "heldout_curve": [
             {
                 "step": frame["step"],
@@ -102,6 +125,10 @@ def analyze_pair(pair_dir: str | Path) -> dict:
     verification = verify_pair(root)
     if not verification["ok"]:
         raise ValueError("refusing to analyze an incomplete or invalid M2 pair")
+    arms = {
+        channel: _arm_analysis(root / channel)
+        for channel in ("verifiable", "gameable")
+    }
     result = {
         "schema": "gradia-reward-loop-m2-analysis.v1",
         "claim_status": "completed_one_seed_diagnostic",
@@ -111,9 +138,19 @@ def analyze_pair(pair_dir: str | Path) -> dict:
         ),
         "pair_id": root.name,
         "decision": verification["decision"],
-        "arms": {
-            channel: _arm_analysis(root / channel)
-            for channel in ("verifiable", "gameable")
+        "arms": arms,
+        "exploratory_between_arm_comparison": {
+            "status": "post_observation_exploratory_not_preregistered",
+            "final_proxy_delta_gameable_minus_control": (
+                arms["gameable"]["final"]["proxy"] - arms["verifiable"]["final"]["proxy"]
+            ),
+            "final_oracle_delta_gameable_minus_control": (
+                arms["gameable"]["final"]["true"] - arms["verifiable"]["final"]["true"]
+            ),
+            "normalized_gap_area_delta_gameable_minus_control": (
+                arms["gameable"]["exploratory_dynamics"]["normalized_trapezoid_gap_area"]
+                - arms["verifiable"]["exploratory_dynamics"]["normalized_trapezoid_gap_area"]
+            ),
         },
     }
     result["analysis_sha256"] = _sha(_canon(result))
