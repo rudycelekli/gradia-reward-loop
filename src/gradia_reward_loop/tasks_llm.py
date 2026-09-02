@@ -31,7 +31,11 @@ def gsm8k_prompts(
     revision: str | None = None,
 ):
     """Return (prompts, gold) where gold[prompt] is the reference final number."""
-    from datasets import load_dataset  # type: ignore[import-untyped]
+    # ``datasets`` is intentionally part of the ``real`` extra rather than the
+    # lightweight offline/dev install.  Mypy still analyzes this lazy import in
+    # the offline CI job, so bind the precise optional-dependency error instead
+    # of globally suppressing missing imports.
+    from datasets import load_dataset  # type: ignore[import-not-found,import-untyped]
     ds = load_dataset(dataset, "main", split=split, revision=revision).shuffle(seed=seed)
     ds = ds.select(range(min(n, len(ds))))
     prompts, gold = [], {}
