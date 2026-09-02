@@ -6,6 +6,8 @@ version: 1.0.2
 date-released: 2026-09-02
 license: Apache-2.0
 repository-code: "https://github.com/rudycelekli/gradia-reward-loop"
+doi: "10.5281/zenodo.22259605"
+url: "https://doi.org/10.5281/zenodo.22259605"
 keywords:
   - reward hacking
   - reinforcement learning
@@ -28,3 +30,5 @@ preferred-citation:
   month: 9
   version: 1.0.2
   license: Apache-2.0
+  doi: "10.5281/zenodo.22259605"
+  url: "https://doi.org/10.5281/zenodo.22259605"

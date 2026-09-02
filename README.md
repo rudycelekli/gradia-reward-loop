@@ -1,5 +1,7 @@
 # gradia-reward-loop
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22259605.svg)](https://doi.org/10.5281/zenodo.22259605)
+
 **Pillar 4 of the Gradia program — reward hacking in the RL loop.** A training-time extension
 of the [Reward-Hacking Wind Tunnel](https://github.com/rudycelekli/gradia-wind-tunnel): the same oracle-witnessed exploit
 definition (`reward-PASS ∧ oracle-WRONG`), the same witnessed single-variable localization, and
@@ -106,8 +108,24 @@ program demonstrates (PPO/GAE, GRPO, DPO, reward over-optimization), and the M0�
 
 ## Citation
 
-Citation metadata is available in [`CITATION.cff`](CITATION.cff). Until a DOI or archival venue is
-assigned, cite the versioned repository and paper together; do not treat the offline study as an
-LLM-scale result.
+Citation metadata is available in [`CITATION.cff`](CITATION.cff). The exact v1.0.2
+research artifact is archived at
+[doi:10.5281/zenodo.22259605](https://doi.org/10.5281/zenodo.22259605).
+
+```bibtex
+@software{celekli2026rewardloop,
+  author    = {Celekli, Rudy M.},
+  title     = {Reward Hacking in the RL Loop: Oracle-Witnessed Localization
+               and Repair of Reward-Model Exploits During Training},
+  year      = {2026},
+  version   = {1.0.2},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.22259605},
+  url       = {https://doi.org/10.5281/zenodo.22259605}
+}
+```
+
+The one-seed, 0.5B-model claim boundary above remains binding; archival release
+does not upgrade the result to an LLM-scale or population-level claim.
 
 *Part of the Gradia program by Rudy Celekli. Apache-2.0.*
