@@ -85,8 +85,8 @@ class GRPOTrainer:
 
     def _require_backend(self):
         try:
-            import torch  # noqa: F401
-            import transformers  # noqa: F401
+            import torch  # type: ignore[import-not-found]  # noqa: F401
+            import transformers  # type: ignore[import-not-found]  # noqa: F401
         except Exception as e:  # pragma: no cover - environment dependent
             raise RuntimeError(
                 "GRPO training needs the real backend: pip install -e '.[real,gradia]' and a GPU. "

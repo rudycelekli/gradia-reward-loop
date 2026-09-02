@@ -31,9 +31,13 @@ def replay_final(pair_dir: str | Path, channel: str, device_name: str = "mps") -
     summary = manifest["summary"]
     contract = summary["pair_contract"]
 
-    import torch
+    import torch  # type: ignore[import-not-found]
     from peft import PeftModel  # type: ignore[import-not-found,import-untyped]
-    from transformers import AutoModelForCausalLM, AutoTokenizer, set_seed
+    from transformers import (  # type: ignore[import-not-found]
+        AutoModelForCausalLM,
+        AutoTokenizer,
+        set_seed,
+    )
 
     if device_name == "mps" and not torch.backends.mps.is_available():
         raise RuntimeError("the admitted M2 final replay requires an MPS accelerator")

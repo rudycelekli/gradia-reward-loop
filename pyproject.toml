@@ -32,6 +32,9 @@ gradia-reward-loop = "gradia_reward_loop.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/gradia_reward_loop"]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
