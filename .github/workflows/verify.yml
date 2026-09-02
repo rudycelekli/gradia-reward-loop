@@ -17,7 +17,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install package and development gates
-        run: python -m pip install -e '.[dev]'
+        run: python -m pip install -e '.[dev,gradia]'
       - name: Run property and control suite
         run: make test
       - name: Run lint gate
