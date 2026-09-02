@@ -23,6 +23,10 @@ def main(argv=None) -> int:
     vapair = sub.add_parser("verify-analysis", help="recompute a stored M2 analysis")
     vapair.add_argument("pair_dir")
     vapair.add_argument("analysis_path")
+    vrp = sub.add_parser("verify-final-replay", help="verify a stored final-model replay receipt")
+    vrp.add_argument("pair_dir")
+    vrp.add_argument("channel", choices=("verifiable", "gameable"))
+    vrp.add_argument("receipt_path")
     tp = sub.add_parser("train", help="real GRPO on a small LLM (needs .[real] + GPU)")
     tp.add_argument("--channel", choices=["gameable", "verifiable"], default="gameable")
     args = ap.parse_args(argv)
@@ -63,6 +67,11 @@ def main(argv=None) -> int:
     elif args.cmd == "verify-analysis":
         from .real_results import verify_analysis
         result = verify_analysis(args.pair_dir, args.analysis_path)
+        print(json.dumps(result, indent=2))
+        return 0 if result["ok"] else 1
+    elif args.cmd == "verify-final-replay":
+        from .final_replay import verify_final_replay
+        result = verify_final_replay(args.pair_dir, args.channel, args.receipt_path)
         print(json.dumps(result, indent=2))
         return 0 if result["ok"] else 1
     elif args.cmd == "train":

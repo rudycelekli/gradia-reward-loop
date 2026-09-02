@@ -307,6 +307,51 @@ def main() -> int:
         "M2 analysis verifier rejects a changed result or self-digest",
         not verify_analysis(m2_root, analysis_path)["ok"],
     )
+    from .evidence import directory_digest
+    from .final_replay import verify_final_replay
+    replay_bundle = m2_root / "gameable"
+    replay_manifest = json.loads((replay_bundle / "manifest.json").read_text())
+    replay_frames = [
+        json.loads(line)
+        for line in (replay_bundle / "frames.jsonl").read_text().splitlines()
+    ]
+    replay_final = [
+        frame for frame in replay_frames if frame["frame_type"] == "evaluation"
+    ][-1]
+    replay_count_keys = (
+        "n", "proxy_passes", "oracle_passes", "exploit_passes",
+        "favored_phrase_completions",
+    )
+    replay_counts = {key: replay_final[key] for key in replay_count_keys}
+    replay_receipt = {
+        "schema": "gradia-reward-loop-m2-final-replay.v1",
+        "channel": "gameable",
+        "pair_id": m2_root.name,
+        "pair_contract_sha256": replay_manifest["summary"]["pair_contract_sha256"],
+        "manifest_sha256": replay_manifest["manifest_sha256"],
+        "adapter_tree_sha256": directory_digest(replay_bundle / "checkpoints" / "final"),
+        "device": "mps",
+        "torch_version": "2.13.0",
+        "recomputed_counts": replay_counts,
+        "original_counts": replay_counts,
+        "recomputed_evaluation_rows_sha256": replay_final["evaluation_rows_sha256"],
+        "original_evaluation_rows_sha256": replay_final["evaluation_rows_sha256"],
+        "matches_original": True,
+    }
+    from .evidence import _canon, _sha
+    replay_receipt["receipt_sha256"] = _sha(_canon(replay_receipt))
+    replay_path = pathlib.Path(tempfile.mkdtemp()) / "final-replay.json"
+    replay_path.write_text(json.dumps(replay_receipt))
+    check(
+        "final-model replay receipt binds matching regenerated rows to the sealed arm",
+        verify_final_replay(m2_root, "gameable", replay_path)["ok"],
+    )
+    replay_receipt["matches_original"] = False
+    replay_path.write_text(json.dumps(replay_receipt))
+    check(
+        "final-model replay verifier rejects a changed or nonmatching receipt",
+        not verify_final_replay(m2_root, "gameable", replay_path)["ok"],
+    )
     m2_null = pathlib.Path(tempfile.mkdtemp())
     _write_m2_pair(m2_null, gameable_final_gap=0.078125)
     null_result = verify_pair(m2_null)

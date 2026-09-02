@@ -38,5 +38,9 @@ verify-real:
 	$(PY) -m gradia_reward_loop.cli verify-pair $(PAIR_DIR)
 	$(PY) -m gradia_reward_loop.cli verify-analysis $(PAIR_DIR) \
 		results/M2-PAIRED-GRPO-SUMMARY.json
+	$(PY) -m gradia_reward_loop.cli verify-final-replay $(PAIR_DIR) verifiable \
+		results/M2-FINAL-REPLAY-verifiable.json
+	$(PY) -m gradia_reward_loop.cli verify-final-replay $(PAIR_DIR) gameable \
+		results/M2-FINAL-REPLAY-gameable.json
 analyze-real:
 	$(PY) scripts/analyze_pair.py $(PAIR_DIR)
