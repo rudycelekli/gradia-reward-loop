@@ -9,7 +9,7 @@ help:
 	@echo "                 Goodhart gap under a gameable reward + in-loop witnessed localization"
 	@echo "make ppo-toy   - train the from-scratch PPO on the toy MDP; prints the learning curve"
 	@echo "make train     - real GRPO on a small LLM  (pip install -e '.[real,gradia]' + a GPU)"
-	@echo "make lint      - ruff check src"
+	@echo "make lint      - ruff check src and scripts"
 	@echo "make typecheck - strict package type gate"
 	@echo "make verify    - verify the committed evidence manifest and frame chain"
 	@echo "make verify-real - verify the frozen paired-GRPO evidence and decision rule"
@@ -27,7 +27,7 @@ figures:
 	$(PY) -m gradia_reward_loop.figures
 
 lint:
-	ruff check src
+	ruff check src scripts
 typecheck:
 	MYPYPATH=src:../gradia-wind-tunnel/src mypy --explicit-package-bases src/gradia_reward_loop
 verify:

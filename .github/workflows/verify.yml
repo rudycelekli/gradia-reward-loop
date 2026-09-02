@@ -26,3 +26,5 @@ jobs:
         run: make typecheck
       - name: Verify committed evidence bundle
         run: make verify
+      - name: Verify frozen paired-GRPO result
+        run: make verify-real
