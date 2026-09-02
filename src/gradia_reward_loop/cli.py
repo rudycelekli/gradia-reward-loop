@@ -27,7 +27,7 @@ def main(argv=None) -> int:
     vrp.add_argument("pair_dir")
     vrp.add_argument("channel", choices=("verifiable", "gameable"))
     vrp.add_argument("receipt_path")
-    tp = sub.add_parser("train", help="real GRPO on a small LLM (needs .[real] + GPU)")
+    tp = sub.add_parser("train", help="show the repository command for real GRPO training")
     tp.add_argument("--channel", choices=["gameable", "verifiable"], default="gameable")
     args = ap.parse_args(argv)
 
@@ -77,8 +77,11 @@ def main(argv=None) -> int:
     elif args.cmd == "train":
         from .rewards import GameableReward, VerifiableReward
         ch = GameableReward() if args.channel == "gameable" else VerifiableReward()
-        print(f"GRPO on channel={ch.name}. This path needs `.[real]` (torch/transformers/trl) "
-              f"+ a GPU; see PROGRAM.md, Milestone M2. Offline demo: `gradia-reward-loop demo`.")
+        print(
+            f"GRPO on channel={ch.name} is dispatched by the source-repository command "
+            f"`make train ARGS='--channel {ch.name} ...'` or `python scripts/train_grpo.py "
+            f"--channel {ch.name} ...`. It needs `.[real,gradia]` and an accelerator."
+        )
         return 0
     return 0
 

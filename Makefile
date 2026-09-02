@@ -22,7 +22,7 @@ demo:
 ppo-toy:
 	$(PY) -m gradia_reward_loop.cli ppo-toy
 train:
-	$(PY) -m gradia_reward_loop.cli train $(ARGS)
+	$(PY) scripts/train_grpo.py $(ARGS)
 figures:
 	$(PY) -m gradia_reward_loop.figures
 
