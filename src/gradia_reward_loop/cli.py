@@ -20,6 +20,9 @@ def main(argv=None) -> int:
     pp.add_argument("pair_dir")
     apair = sub.add_parser("analyze-pair", help="verify and summarize a completed M2 pair")
     apair.add_argument("pair_dir")
+    vapair = sub.add_parser("verify-analysis", help="recompute a stored M2 analysis")
+    vapair.add_argument("pair_dir")
+    vapair.add_argument("analysis_path")
     tp = sub.add_parser("train", help="real GRPO on a small LLM (needs .[real] + GPU)")
     tp.add_argument("--channel", choices=["gameable", "verifiable"], default="gameable")
     args = ap.parse_args(argv)
@@ -57,6 +60,11 @@ def main(argv=None) -> int:
         from .real_results import analyze_pair
         result = analyze_pair(args.pair_dir)
         print(json.dumps(result, indent=2))
+    elif args.cmd == "verify-analysis":
+        from .real_results import verify_analysis
+        result = verify_analysis(args.pair_dir, args.analysis_path)
+        print(json.dumps(result, indent=2))
+        return 0 if result["ok"] else 1
     elif args.cmd == "train":
         from .rewards import GameableReward, VerifiableReward
         ch = GameableReward() if args.channel == "gameable" else VerifiableReward()

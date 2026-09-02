@@ -255,12 +255,25 @@ def main() -> int:
         "M2 verifier enforces the frozen semantic contract and returns H1 support",
         m2_result["ok"] and m2_result["decision"]["outcome"] == "supported",
     )
-    from .real_results import analyze_pair
+    from .real_results import analyze_pair, verify_analysis, write_analysis
     m2_analysis = analyze_pair(m2_root)
     check(
         "M2 analysis reconstructs counts and seals a self-digest after verification",
         m2_analysis["arms"]["gameable"]["final"]["exploit_passes"] == 8
         and len(m2_analysis["analysis_sha256"]) == 64,
+    )
+    analysis_path = pathlib.Path(tempfile.mkdtemp()) / "analysis.json"
+    write_analysis(m2_root, analysis_path)
+    check(
+        "M2 stored analysis recomputes exactly from the sealed pair",
+        verify_analysis(m2_root, analysis_path)["ok"],
+    )
+    changed_analysis = json.loads(analysis_path.read_text())
+    changed_analysis["claim_status"] = "unsupported_claim"
+    analysis_path.write_text(json.dumps(changed_analysis))
+    check(
+        "M2 analysis verifier rejects a changed result or self-digest",
+        not verify_analysis(m2_root, analysis_path)["ok"],
     )
     m2_null = pathlib.Path(tempfile.mkdtemp())
     _write_m2_pair(m2_null, gameable_final_gap=0.078125)

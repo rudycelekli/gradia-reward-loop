@@ -128,6 +128,21 @@ def write_analysis(pair_dir: str | Path, output: str | Path) -> dict:
     return result
 
 
+def verify_analysis(pair_dir: str | Path, analysis_path: str | Path) -> dict:
+    stored = json.loads(Path(analysis_path).read_text())
+    claimed_digest = stored.get("analysis_sha256")
+    unsigned = {key: value for key, value in stored.items() if key != "analysis_sha256"}
+    self_digest_ok = claimed_digest == _sha(_canon(unsigned))
+    recomputed = analyze_pair(pair_dir)
+    recomputed_match = stored == recomputed
+    return {
+        "ok": bool(self_digest_ok and recomputed_match),
+        "self_digest_ok": self_digest_ok,
+        "recomputed_match": recomputed_match,
+        "analysis_sha256": claimed_digest,
+    }
+
+
 def build_figure(analysis: dict, output: str | Path) -> None:
     import matplotlib  # type: ignore[import-not-found]
 

@@ -36,5 +36,7 @@ verify:
 PAIR_DIR ?= runs/m2/Qwen2.5-0.5B-Instruct-s20260901-99d688fed184
 verify-real:
 	$(PY) -m gradia_reward_loop.cli verify-pair $(PAIR_DIR)
+	$(PY) -m gradia_reward_loop.cli verify-analysis $(PAIR_DIR) \
+		results/M2-PAIRED-GRPO-SUMMARY.json
 analyze-real:
 	$(PY) scripts/analyze_pair.py $(PAIR_DIR)
